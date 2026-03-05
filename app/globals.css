@@ -821,18 +821,16 @@ html {
 .ds-profile-shell {
   max-width: 980px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .ds-profile-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.85fr);
   gap: 14px;
-  align-items: stretch;
 }
 
 .ds-profile-card {
-  flex: 1 1 320px;
-  min-width: 280px;
   border: 1px solid rgba(255, 255, 255, 0.74);
   border-radius: var(--ds-r-md);
   background: linear-gradient(
@@ -849,9 +847,28 @@ html {
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
+.ds-profile-card .ds-h3 {
+  margin: 0;
+  text-align: left;
+}
+
+.ds-profile-security-card {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.ds-profile-security-card .ds-stack-md {
+  width: 100%;
+}
+
+.ds-profile-msg {
+  text-align: center;
+  margin-top: var(--ds-space-1);
+}
+
 .ds-profile-row {
-  border-top: 1px solid rgba(58, 86, 53, 0.18);
-  padding-top: 12px;
+  border-top: 1px solid rgba(239, 229, 216, 0.28);
+  padding-top: 10px;
 }
 
 .ds-profile-action {
@@ -868,6 +885,12 @@ html {
   background: transparent;
   text-decoration: none;
   color: var(--ds-text-muted);
+}
+
+@media (max-width: 920px) {
+  .ds-profile-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 920px) {

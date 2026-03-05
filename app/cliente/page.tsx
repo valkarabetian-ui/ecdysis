@@ -749,7 +749,8 @@ export default function ClientePage() {
   if (loading) {
     return (
       <AppShell
-        title="Tu espacio"
+        kicker=""
+        title="Práctica viva"
         subtitle="Bienestar desde dentro hacia afuera."
       >
         <FloatingCard title="Cargando" description="Sincronizando tu experiencia.">
@@ -765,7 +766,8 @@ export default function ClientePage() {
   if (showCompletionScreen) {
     return (
       <AppShell
-        title="Tu espacio"
+        kicker=""
+        title="Práctica viva"
         subtitle="Bienestar desde dentro hacia afuera."
       >
         <FloatingCard
@@ -779,7 +781,7 @@ export default function ClientePage() {
   }
 
   return (
-    <AppShell title="Tu espacio" subtitle="Bienestar desde dentro hacia afuera.">
+    <AppShell kicker="" title="Práctica viva" subtitle="Bienestar desde dentro hacia afuera.">
       <div
         className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}
         style={{
@@ -806,7 +808,6 @@ export default function ClientePage() {
           >
             {!welcomeSeen && welcomeVideos.length > 0 && (
               <div className="ds-section-block">
-                <p className="ds-micro">Videos de bienvenida</p>
                 <div className="ds-welcome-carousel-shell">
                   <button
                     type="button"
@@ -1106,7 +1107,6 @@ export default function ClientePage() {
 
       {tab === "biblioteca" && (
           <FloatingCard title="Biblioteca" className="ds-library-shell">
-            <p className="ds-kicker ds-library-kicker">Práctica viva</p>
             <div className="ds-section-block">
               <h3 className="ds-h3">Próxima clase en vivo</h3>
               {nextLive ? (
@@ -1284,8 +1284,7 @@ export default function ClientePage() {
                 </p>
               </div>
             </article>
-
-            <article className="ds-profile-card">
+            <article className="ds-profile-card ds-profile-security-card">
               <h3 className="ds-h3">Seguridad</h3>
               {!showPasswordChange ? (
                 <PrimaryButton onClick={() => setShowPasswordChange(true)} className="ds-profile-action">
@@ -1311,7 +1310,7 @@ export default function ClientePage() {
               <GhostButton onClick={logout} className="ds-profile-logout">Cerrar sesión</GhostButton>
             </article>
           </div>
-          {profileMsg && <p className="ds-description">{profileMsg}</p>}
+          {profileMsg && <p className="ds-description ds-profile-msg">{profileMsg}</p>}
         </FloatingCard>
       )}
 
