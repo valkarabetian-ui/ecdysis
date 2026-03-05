@@ -1,7 +1,7 @@
 ﻿
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, Fragment, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   AppShell,
@@ -35,7 +35,7 @@ type Routine = {
   repetitions: string;
   plan_type: PlanType;
 };
-type TemplateItem = { id: string; template_id: string; exercise_id: string; repetitions: number };
+type TemplateItem = { id: string; template_id: string; exercise_id: string; repetitions: string };
 type Template = {
   id: string;
   client_id: string;
@@ -45,15 +45,16 @@ type Template = {
   start_date: string;
   items: TemplateItem[];
 };
-type RecordedClass = { id: string; area: Area; title: string; youtube_url: string };
-type LiveClass = { id: string; area: Area; title: string; class_datetime: string; meet_url: string };
-type WelcomeVideo = { id: string; title: string; youtube_url: string };
+type RecordedClass = { id: string; area: Area; title: string; youtube_url: string; created_at?: string };
+type LiveClass = { id: string; area: Area; title: string; class_datetime: string; meet_url: string; created_at?: string };
+type WelcomeVideo = { id: string; title: string; youtube_url: string; created_at?: string };
 type EncounterView = "recorded" | "live";
 
-const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
+const tabs: { id: Tab; label: string; shortLabel: string; icon: ReactNode }[] = [
   {
     id: "clientes",
     label: "Gestión de clientes",
+    shortLabel: "Gestión",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -66,6 +67,7 @@ const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
   {
     id: "fuerza",
     label: "Fuerza / Movilidad",
+    shortLabel: "Fuerza",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 10h3v4H3zM18 10h3v4h-3zM6 11h3v2H6zM15 11h3v2h-3zM9 10h6v4H9z" />
@@ -75,6 +77,7 @@ const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
   {
     id: "yoga",
     label: "Yoga / Meditación",
+    shortLabel: "Yoga",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="5.5" r="2.2" />
@@ -86,6 +89,7 @@ const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
   {
     id: "bienvenida",
     label: "Videos de Bienvenida",
+    shortLabel: "Bienvenida",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="6" width="18" height="12" rx="2" />
@@ -117,6 +121,17 @@ const toDateTimeLocal = (isoDate: string) => {
   return local.toISOString().slice(0, 16);
 };
 
+const formatShortDate = (isoDate?: string | null) => {
+  if (!isoDate) return "-";
+  const parsed = new Date(isoDate);
+  if (Number.isNaN(parsed.getTime())) return "-";
+  return parsed.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 export default function AdminPage() {
   const defaultRoutineDate = new Date().toISOString().slice(0, 10);
   const [tab, setTab] = useState<Tab>("clientes");
@@ -134,9 +149,11 @@ export default function AdminPage() {
   const [welcome, setWelcome] = useState<WelcomeVideo[]>([]);
 
   const [newClient, setNewClient] = useState({ name: "", email: "" });
+  const [showCreateClientForm, setShowCreateClientForm] = useState(false);
   const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category });
   const [showExercises, setShowExercises] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState("");
+  const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<"todas" | Category>("todas");
   const [viewClient, setViewClient] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState<PlanType>("semanal");
@@ -164,9 +181,9 @@ export default function AdminPage() {
     planType: "semanal" as PlanType,
     startDate: "",
     exerciseId: "",
-    reps: 10,
+    reps: "10",
   });
-  const [tplDraft, setTplDraft] = useState<{ exercise_id: string; repetitions: number }[]>([]);
+  const [tplDraft, setTplDraft] = useState<{ exercise_id: string; repetitions: string }[]>([]);
 
   const [recForm, setRecForm] = useState({ title: "", url: "" });
   const [liveForm, setLiveForm] = useState({ title: "", date: "", url: "" });
@@ -257,10 +274,12 @@ export default function AdminPage() {
 
   const filteredExercises = useMemo(
     () =>
-      exercises.filter((exercise) =>
-        exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase()),
-      ),
-    [exercises, exerciseSearch],
+      exercises.filter((exercise) => {
+        const byName = exercise.name.toLowerCase().includes(exerciseSearch.toLowerCase());
+        const byCategory = exerciseCategoryFilter === "todas" || exercise.category === exerciseCategoryFilter;
+        return byName && byCategory;
+      }),
+    [exercises, exerciseSearch, exerciseCategoryFilter],
   );
 
   const filteredClients = useMemo(
@@ -293,6 +312,7 @@ export default function AdminPage() {
       setMsg(data.warning ?? "Cliente creado. Se envio un mail automatico para crear contraseÃ±a.");
       showSuccessToast(data.warning ?? "Cliente creado exitosamente.");
       setNewClient({ name: "", email: "" });
+      setShowCreateClientForm(false);
       await loadAll();
     } catch {
       setError("No se pudo crear el cliente. Verifica SUPABASE_SERVICE_ROLE_KEY y reinicia el servidor.");
@@ -446,7 +466,7 @@ export default function AdminPage() {
     }
 
     setTplDraft([]);
-    setTpl((current) => ({ ...current, name: "", startDate: "", exerciseId: "", reps: 10 }));
+    setTpl((current) => ({ ...current, name: "", startDate: "", exerciseId: "", reps: "10" }));
     await loadAll();
     showSuccessToast("Plantilla creada exitosamente.");
     setSaving(false);
@@ -455,7 +475,7 @@ export default function AdminPage() {
   const updateTemplateItem = async (
     itemId: string,
     field: "exercise_id" | "repetitions",
-    value: string | number,
+    value: string,
   ) => {
     const { error: updateError } = await supabase
       .from("routine_template_items")
@@ -515,7 +535,14 @@ export default function AdminPage() {
       .eq("id", id);
     if (updateError) setError(updateError.message);
     await loadAll();
-    if (!updateError) showSuccessToast("Clase grabada actualizada exitosamente.");
+    if (!updateError) {
+      setEditingRecorded((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      showSuccessToast("Clase grabada actualizada exitosamente.");
+    }
     setSaving(false);
   };
 
@@ -561,7 +588,14 @@ export default function AdminPage() {
       .eq("id", id);
     if (updateError) setError(updateError.message);
     await loadAll();
-    if (!updateError) showSuccessToast("Clase en vivo actualizada exitosamente.");
+    if (!updateError) {
+      setEditingLive((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      showSuccessToast("Clase en vivo actualizada exitosamente.");
+    }
     setSaving(false);
   };
 
@@ -630,7 +664,14 @@ export default function AdminPage() {
       .eq("id", id);
     if (updateError) setError(updateError.message);
     await loadAll();
-    if (!updateError) showSuccessToast("Video de bienvenida actualizado exitosamente.");
+    if (!updateError) {
+      setEditingWelcome((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      showSuccessToast("Video de bienvenida actualizado exitosamente.");
+    }
     setSaving(false);
   };
 
@@ -658,6 +699,7 @@ export default function AdminPage() {
 
   return (
     <AppShell title="" kicker="">
+      <h1 className="ds-h1 ds-admin-page-title">Práctica viva</h1>
       {toastMessage && (
         <div className="ds-toast" role="status" aria-live="polite">
           {toastMessage}
@@ -675,15 +717,14 @@ export default function AdminPage() {
 
       {tab === "clientes" && (
         <>
-          <FloatingCard title="Crear cliente" description="Alta asistida con invitacion por email.">
-            <form onSubmit={createClient} className="ds-grid-3 ds-inline-upload-form">
-              <TextField label="Nombre" value={newClient.name} onChange={(value) => setNewClient({ ...newClient, name: value })} />
-              <TextField label="Mail" value={newClient.email} onChange={(value) => setNewClient({ ...newClient, email: value })} type="email" />
-              <PrimaryButton type="submit">Crear cliente</PrimaryButton>
-            </form>
-          </FloatingCard>
-
-          <FloatingCard title="Mis clientes">
+          <FloatingCard
+            title="Mis clientes"
+            headerRight={(
+              <PrimaryButton onClick={() => setShowCreateClientForm(true)}>
+                + Crear cliente
+              </PrimaryButton>
+            )}
+          >
             <input
               value={clientSearch}
               onChange={(event) => setClientSearch(event.target.value)}
@@ -691,150 +732,227 @@ export default function AdminPage() {
               className="ds-input"
             />
 
-            {filteredClients.map((client) => {
-              const isOpen = viewClient === client.id;
-              const clientRoutines = routines.filter(
-                (routine) => {
-                  if (routine.client_id !== client.id) return false;
-                  if (routine.plan_type !== filterPlan) return false;
-                  if (filterCat !== "todas" && routine.category !== filterCat) return false;
-
-                  if (filterDateMode === "todas") return true;
-
-                  const routineDate = routine.routine_date ?? "";
-                  if (!routineDate) return false;
-
-                  if (filterDateMode === "dia") {
-                    if (!filterDateSingle) return true;
-                    return routineDate === filterDateSingle;
-                  }
-
-                  if (filterDateMode === "rango") {
-                    if (filterDateFrom && routineDate < filterDateFrom) return false;
-                    if (filterDateTo && routineDate > filterDateTo) return false;
-                    return true;
-                  }
-
-                  return true;
-                },
-              );
-
-              return (
-                <div key={client.id} className="ds-stack-md">
-                  <EditorialWorkoutCard
-                    title={client.name}
-                    meta={client.email}
-                    rightSlot={
-                      <div className="ds-pill-row">
-                        <GhostButton onClick={() => {
-                          setViewClient((current) => (current === client.id ? "" : client.id));
-                          setSelectedRoutineIds([]);
-                        }}>
-                          {isOpen ? "Ocultar rutina" : "Ver rutina"}
-                        </GhostButton>
-                        <SecondaryButton onClick={() => removeClient(client.id)}>Eliminar</SecondaryButton>
-                      </div>
-                    }
-                  />
-
-                  <ExpandableSection open={isOpen}>
-                    <div className="ds-stack-md">
-                      <div className="ds-grid-3">
-                        <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
-                          <option value="semanal">Semanal</option>
-                          <option value="mensual">Mensual</option>
-                        </SelectField>
-                        <SelectField label="Categoria" value={filterCat} onChange={(value) => setFilterCat(value as "todas" | Category)}>
-                          <option value="todas">Fuerza y movilidad</option>
-                          <option value="fuerza">Fuerza</option>
-                          <option value="movilidad">Movilidad</option>
-                        </SelectField>
-                        <SelectField label="Filtrar por fecha" value={filterDateMode} onChange={(value) => setFilterDateMode(value as "todas" | "dia" | "rango")}>
-                          <option value="todas">Todas las fechas</option>
-                          <option value="dia">Solo un dia</option>
-                          <option value="rango">Rango de dias</option>
-                        </SelectField>
-                      </div>
-                      {filterDateMode === "dia" && (
-                        <div className="ds-grid-2">
-                          <TextField
-                            label="Dia"
-                            value={filterDateSingle}
-                            onChange={setFilterDateSingle}
-                            type="date"
-                          />
-                        </div>
-                      )}
-                      {filterDateMode === "rango" && (
-                        <div className="ds-grid-2">
-                          <TextField
-                            label="Desde"
-                            value={filterDateFrom}
-                            onChange={setFilterDateFrom}
-                            type="date"
-                          />
-                          <TextField
-                            label="Hasta"
-                            value={filterDateTo}
-                            onChange={setFilterDateTo}
-                            type="date"
-                          />
-                        </div>
-                      )}
-                      {clientRoutines.length > 0 && (
-                        <div className="ds-pill-row">
-                          <GhostButton
-                            onClick={() =>
-                              setSelectedRoutineIds((current) => {
-                                const visibleIds = clientRoutines.map((routine) => routine.id);
-                                const allSelected = visibleIds.every((id) => current.includes(id));
-                                if (allSelected) {
-                                  return current.filter((id) => !visibleIds.includes(id));
-                                }
-                                return Array.from(new Set([...current, ...visibleIds]));
-                              })
-                            }
-                          >
-                            Seleccionar todos
-                          </GhostButton>
-                          <SecondaryButton onClick={deleteSelectedRoutines}>
-                            Eliminar seleccionados ({selectedRoutineIds.length})
-                          </SecondaryButton>
-                        </div>
-                      )}
-                      {clientRoutines.map((routine) => (
-                        <EditorialWorkoutCard
-                          key={routine.id}
-                          title={`${exerciseName(routine.exercise_id)} - ${routine.repetitions} reps`}
-                          meta={`${routine.routine_date ?? routine.day} / ${routine.category}`}
-                          rightSlot={
-                            <div className="ds-pill-row">
-                              <input
-                                type="checkbox"
-                                checked={selectedRoutineIds.includes(routine.id)}
-                                onChange={(event) => {
-                                  if (event.target.checked) {
-                                    setSelectedRoutineIds((current) => [...current, routine.id]);
-                                    return;
-                                  }
-                                  setSelectedRoutineIds((current) =>
-                                    current.filter((id) => id !== routine.id),
-                                  );
-                                }}
-                                aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}
-                              />
-                            </div>
-                          }
-                        />
-                      ))}
-                      {clientRoutines.length === 0 && (
-                        <p className="ds-description">No hay rutinas para este filtro.</p>
-                      )}
+            {showCreateClientForm && (
+              <div
+                className="ds-modal-overlay"
+                role="presentation"
+                onClick={() => setShowCreateClientForm(false)}
+              >
+                <div
+                  className="ds-modal-panel ds-animate-card"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Crear cliente"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="ds-card-head">
+                    <h3 className="ds-h3">Crear cliente</h3>
+                    <GhostButton onClick={() => setShowCreateClientForm(false)}>
+                      Cerrar
+                    </GhostButton>
+                  </div>
+                  <p className="ds-description">
+                    Alta asistida con invitacion por email.
+                  </p>
+                  <form onSubmit={createClient} className="ds-stack-md">
+                    <TextField
+                      label="Nombre"
+                      value={newClient.name}
+                      onChange={(value) => setNewClient({ ...newClient, name: value })}
+                    />
+                    <TextField
+                      label="Mail"
+                      value={newClient.email}
+                      onChange={(value) => setNewClient({ ...newClient, email: value })}
+                      type="email"
+                    />
+                    <div className="ds-modal-actions">
+                      <SecondaryButton onClick={() => setShowCreateClientForm(false)}>
+                        Cancelar
+                      </SecondaryButton>
+                      <PrimaryButton type="submit">Crear</PrimaryButton>
                     </div>
-                  </ExpandableSection>
+                  </form>
                 </div>
-              );
-            })}
+              </div>
+            )}
+
+            {filteredClients.length > 0 && (
+              <div className="ds-clients-table-wrap">
+                <table className="ds-clients-table">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>E-mail</th>
+                      <th>Fecha de alta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredClients.map((client) => {
+                      const isOpen = viewClient === client.id;
+                      const clientRoutines = routines.filter(
+                        (routine) => {
+                          if (routine.client_id !== client.id) return false;
+                          if (routine.plan_type !== filterPlan) return false;
+                          if (filterCat !== "todas" && routine.category !== filterCat) return false;
+
+                          if (filterDateMode === "todas") return true;
+
+                          const routineDate = routine.routine_date ?? "";
+                          if (!routineDate) return false;
+
+                          if (filterDateMode === "dia") {
+                            if (!filterDateSingle) return true;
+                            return routineDate === filterDateSingle;
+                          }
+
+                          if (filterDateMode === "rango") {
+                            if (filterDateFrom && routineDate < filterDateFrom) return false;
+                            if (filterDateTo && routineDate > filterDateTo) return false;
+                            return true;
+                          }
+
+                          return true;
+                        },
+                      );
+
+                      return (
+                        <Fragment key={client.id}>
+                          <tr
+                            className={`ds-client-main-row ${isOpen ? "is-open" : ""}`}
+                            onClick={() => {
+                              setViewClient((current) => (current === client.id ? "" : client.id));
+                              setSelectedRoutineIds([]);
+                            }}
+                          >
+                            <td>
+                              <div className="ds-client-name-cell">
+                                <span>{client.name}</span>
+                              </div>
+                            </td>
+                            <td>{client.email}</td>
+                            <td>
+                              {new Date(client.created_at).toLocaleDateString("es-AR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })}
+                            </td>
+                          </tr>
+                          <tr className={`ds-client-expanded-row ${isOpen ? "is-open" : ""}`}>
+                            <td colSpan={3}>
+                              <ExpandableSection open={isOpen}>
+                                <div className="ds-client-expanded-content">
+                                  <div className="ds-client-expanded-actions">
+                                    <GhostButton onClick={() => setViewClient("")}>
+                                      Ocultar rutina
+                                    </GhostButton>
+                                    <SecondaryButton onClick={() => removeClient(client.id)}>
+                                      Eliminar cliente
+                                    </SecondaryButton>
+                                  </div>
+                                  <div className="ds-grid-3">
+                                    <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
+                                      <option value="semanal">Semanal</option>
+                                      <option value="mensual">Mensual</option>
+                                    </SelectField>
+                                    <SelectField label="Categoria" value={filterCat} onChange={(value) => setFilterCat(value as "todas" | Category)}>
+                                      <option value="todas">Fuerza y movilidad</option>
+                                      <option value="fuerza">Fuerza</option>
+                                      <option value="movilidad">Movilidad</option>
+                                    </SelectField>
+                                    <SelectField label="Filtrar por fecha" value={filterDateMode} onChange={(value) => setFilterDateMode(value as "todas" | "dia" | "rango")}>
+                                      <option value="todas">Todas las fechas</option>
+                                      <option value="dia">Solo un dia</option>
+                                      <option value="rango">Rango de dias</option>
+                                    </SelectField>
+                                  </div>
+                                  {filterDateMode === "dia" && (
+                                    <div className="ds-grid-2">
+                                      <TextField
+                                        label="Dia"
+                                        value={filterDateSingle}
+                                        onChange={setFilterDateSingle}
+                                        type="date"
+                                      />
+                                    </div>
+                                  )}
+                                  {filterDateMode === "rango" && (
+                                    <div className="ds-grid-2">
+                                      <TextField
+                                        label="Desde"
+                                        value={filterDateFrom}
+                                        onChange={setFilterDateFrom}
+                                        type="date"
+                                      />
+                                      <TextField
+                                        label="Hasta"
+                                        value={filterDateTo}
+                                        onChange={setFilterDateTo}
+                                        type="date"
+                                      />
+                                    </div>
+                                  )}
+                                  {clientRoutines.length > 0 && (
+                                    <div className="ds-pill-row">
+                                      <GhostButton
+                                        onClick={() =>
+                                          setSelectedRoutineIds((current) => {
+                                            const visibleIds = clientRoutines.map((routine) => routine.id);
+                                            const allSelected = visibleIds.every((id) => current.includes(id));
+                                            if (allSelected) {
+                                              return current.filter((id) => !visibleIds.includes(id));
+                                            }
+                                            return Array.from(new Set([...current, ...visibleIds]));
+                                          })
+                                        }
+                                      >
+                                        Seleccionar todos
+                                      </GhostButton>
+                                      <SecondaryButton onClick={deleteSelectedRoutines}>
+                                        Eliminar seleccionados ({selectedRoutineIds.length})
+                                      </SecondaryButton>
+                                    </div>
+                                  )}
+                                  {clientRoutines.map((routine) => (
+                                    <EditorialWorkoutCard
+                                      key={routine.id}
+                                      title={`${exerciseName(routine.exercise_id)} - ${routine.repetitions} reps`}
+                                      meta={`${routine.routine_date ?? routine.day} / ${routine.category}`}
+                                      rightSlot={
+                                        <div className="ds-pill-row">
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedRoutineIds.includes(routine.id)}
+                                            onChange={(event) => {
+                                              if (event.target.checked) {
+                                                setSelectedRoutineIds((current) => [...current, routine.id]);
+                                                return;
+                                              }
+                                              setSelectedRoutineIds((current) =>
+                                                current.filter((id) => id !== routine.id),
+                                              );
+                                            }}
+                                            aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}
+                                          />
+                                        </div>
+                                      }
+                                    />
+                                  ))}
+                                  {clientRoutines.length === 0 && (
+                                    <p className="ds-description">No hay rutinas para este filtro.</p>
+                                  )}
+                                </div>
+                              </ExpandableSection>
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
             {filteredClients.length === 0 && (
               <p className="ds-description">No hay clientes con ese nombre.</p>
             )}
@@ -868,40 +986,67 @@ export default function AdminPage() {
 
             <ExpandableSection open={showExercises}>
               <>
-                <TextField
-                  label="Buscar por nombre"
-                  value={exerciseSearch}
-                  onChange={setExerciseSearch}
-                  placeholder="Ej: sentadilla"
-                />
-                {filteredExercises.map((exercise) => (
-                  <FloatingCard
-                    key={exercise.id}
-                    title={exercise.name}
-                    description={exercise.category}
+                <div className="ds-grid-2">
+                  <TextField
+                    label="Buscar por nombre"
+                    value={exerciseSearch}
+                    onChange={setExerciseSearch}
+                    placeholder="Ej: sentadilla"
+                  />
+                  <SelectField
+                    label="Filtrar por categoría"
+                    value={exerciseCategoryFilter}
+                    onChange={(value) => setExerciseCategoryFilter(value as "todas" | Category)}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={exercise.gif_url}
-                      alt={`GIF de ${exercise.name}`}
-                      className="ds-gif-thumb"
-                      loading="lazy"
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <p className="ds-description ds-break">
-                      <a href={exercise.gif_url} target="_blank" rel="noreferrer">
-                        Ver GIF original
-                      </a>
-                    </p>
-                    <div className="ds-pill-row">
-                      <SecondaryButton onClick={() => deleteExercise(exercise.id)}>
-                        Borrar
-                      </SecondaryButton>
-                    </div>
-                  </FloatingCard>
-                ))}
+                    <option value="todas">Todas</option>
+                    <option value="fuerza">Fuerza</option>
+                    <option value="movilidad">Movilidad</option>
+                  </SelectField>
+                </div>
+                {filteredExercises.length > 0 && (
+                  <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                    <table className="ds-clients-table ds-encounters-table">
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Categoría</th>
+                          <th>GIF</th>
+                          <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredExercises.map((exercise) => (
+                          <tr key={exercise.id}>
+                            <td>{exercise.name}</td>
+                            <td>{exercise.category}</td>
+                            <td>
+                              <a className="ds-link-inline" href={exercise.gif_url} target="_blank" rel="noreferrer">
+                                Ver GIF
+                              </a>
+                            </td>
+                            <td>
+                              <div className="ds-client-row-actions">
+                                <button
+                                  type="button"
+                                  className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                  onClick={() => deleteExercise(exercise.id)}
+                                  aria-label={`Borrar ejercicio ${exercise.name}`}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4h8v2" />
+                                    <path d="M19 6l-1 14H6L5 6" />
+                                    <path d="M10 11v6M14 11v6" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 {filteredExercises.length === 0 && (
                   <p className="ds-description">No hay ejercicios con ese nombre.</p>
                 )}
@@ -910,7 +1055,7 @@ export default function AdminPage() {
           </FloatingCard>
 
           <FloatingCard title="Asignar rutina">
-            <form onSubmit={addRoutineToDraft} className="ds-grid-3">
+            <form id="assign-routine-form" onSubmit={addRoutineToDraft} className="ds-grid-3">
               <SelectField label="Cliente" value={assign.clientId} onChange={(value) => setAssign({ ...assign, clientId: value })}>
                 <option value="">Seleccionar</option>
                 {clients.map((client) => (
@@ -938,7 +1083,6 @@ export default function AdminPage() {
                 onChange={(value) => setAssign({ ...assign, reps: value })}
                 placeholder="Ej: 3x12"
               />
-              <PrimaryButton type="submit">Agregar ejercicio</PrimaryButton>
             </form>
             {assignDraft.map((item, index) => (
               <EditorialWorkoutCard
@@ -947,7 +1091,12 @@ export default function AdminPage() {
                 meta={`${item.routine_date ?? item.day} / ${item.plan_type}`}
               />
             ))}
-            <GhostButton onClick={saveRoutineDraft}>Asignar rutina</GhostButton>
+            <div className="ds-assign-bottom-actions">
+              <PrimaryButton className="ds-assign-add-btn" type="submit" form="assign-routine-form">Agregar ejercicio</PrimaryButton>
+              <GhostButton className="ds-assign-routine-btn ds-assign-save-btn" onClick={saveRoutineDraft}>
+                Asignar rutina
+              </GhostButton>
+            </div>
           </FloatingCard>
 
           <FloatingCard title="Crear plantilla">
@@ -972,7 +1121,7 @@ export default function AdminPage() {
                   <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
                 ))}
               </SelectField>
-              <TextField label="Repeticiones" value={tpl.reps} onChange={(value) => setTpl({ ...tpl, reps: Number(value || 0) })} type="number" />
+              <TextField label="Repeticiones" value={tpl.reps} onChange={(value) => setTpl({ ...tpl, reps: value })} />
               <div className="ds-template-actions">
                 <GhostButton onClick={addTemplateItemToDraft}>
                   Agregar a plantilla
@@ -992,7 +1141,7 @@ export default function AdminPage() {
                         <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
                       ))}
                     </SelectField>
-                    <TextField label="Repeticiones" value={item.repetitions} onChange={(value) => updateTemplateItem(item.id, "repetitions", Number(value || 0))} type="number" />
+                    <TextField label="Repeticiones" value={item.repetitions} onChange={(value) => updateTemplateItem(item.id, "repetitions", value)} />
                   </div>
                 ))}
               </FloatingCard>
@@ -1046,127 +1195,191 @@ export default function AdminPage() {
 
                 {encounterView.fuerza === "recorded" && (
                   <>
-                    <p className="ds-micro">Clases grabadas de Fuerza / Movilidad</p>
                     {fuerzaRecorded.length === 0 && (
                       <p className="ds-description">No hay clases grabadas cargadas.</p>
                     )}
-                    {fuerzaRecorded.map((item) => {
-                      const edit = editingRecorded[item.id];
-                      return (
-                        <FloatingCard key={item.id} title={item.title} description="Grabada">
-                          {edit ? (
-                            <div className="ds-grid-2">
-                              <TextField
-                                label="Nombre"
-                                value={edit.title}
-                                onChange={(value) =>
-                                  setEditingRecorded((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], title: value },
-                                  }))
-                                }
-                              />
-                              <TextField
-                                label="Link YouTube"
-                                value={edit.url}
-                                onChange={(value) =>
-                                  setEditingRecorded((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], url: value },
-                                  }))
-                                }
-                              />
-                            </div>
-                          ) : (
-                            <EditorialWorkoutCard title={item.title} meta={item.youtube_url} />
-                          )}
-                          <div className="ds-pill-row">
-                            {edit ? (
-                              <PrimaryButton onClick={() => saveRecorded(item.id)}>
-                                Guardar cambios
-                              </PrimaryButton>
-                            ) : (
-                              <GhostButton onClick={() => startEditRecorded(item)}>
-                                Editar
-                              </GhostButton>
-                            )}
-                            <SecondaryButton onClick={() => deleteRecorded(item.id)}>
-                              Borrar
-                            </SecondaryButton>
-                          </div>
-                        </FloatingCard>
-                      );
-                    })}
+                    {fuerzaRecorded.length > 0 && (
+                      <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                        <table className="ds-clients-table ds-encounters-table">
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>Link</th>
+                              <th>Fecha</th>
+                              <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fuerzaRecorded.map((item) => {
+                              const edit = editingRecorded[item.id];
+                              return (
+                                <tr key={item.id}>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.title}
+                                        onChange={(event) =>
+                                          setEditingRecorded((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], title: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : item.title}
+                                  </td>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.url}
+                                        onChange={(event) =>
+                                          setEditingRecorded((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], url: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : (
+                                      <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">
+                                        {item.youtube_url}
+                                      </a>
+                                    )}
+                                  </td>
+                                  <td>{formatShortDate(item.created_at)}</td>
+                                  <td>
+                                    <div className="ds-client-row-actions">
+                                      {edit ? (
+                                        <button
+                                          type="button"
+                                          className="ds-encounter-action-btn ds-encounter-save-btn"
+                                          onClick={() => saveRecorded(item.id)}
+                                          aria-label="Guardar cambios"
+                                        >
+                                          <span aria-hidden>✓</span>
+                                        </button>
+                                      ) : (
+                                        <GhostButton className="ds-encounter-action-btn" onClick={() => startEditRecorded(item)}>
+                                          Editar
+                                        </GhostButton>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                        onClick={() => deleteRecorded(item.id)}
+                                        aria-label="Borrar clase grabada"
+                                      >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                          <path d="M3 6h18" />
+                                          <path d="M8 6V4h8v2" />
+                                          <path d="M19 6l-1 14H6L5 6" />
+                                          <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </>
                 )}
 
                 {encounterView.fuerza === "live" && (
                   <>
-                    <p className="ds-micro">Clases en vivo de Fuerza / Movilidad</p>
                     {fuerzaLive.length === 0 && (
                       <p className="ds-description">No hay clases en vivo cargadas.</p>
                     )}
-                    {fuerzaLive.map((item) => {
-                      const edit = editingLive[item.id];
-                      return (
-                        <FloatingCard key={item.id} title={item.title} description="Clase en vivo">
-                          {edit ? (
-                            <div className="ds-grid-3">
-                              <TextField
-                                label="Nombre"
-                                value={edit.title}
-                                onChange={(value) =>
-                                  setEditingLive((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], title: value },
-                                  }))
-                                }
-                              />
-                              <TextField
-                                label="Fecha y hora"
-                                value={edit.date}
-                                onChange={(value) =>
-                                  setEditingLive((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], date: value },
-                                  }))
-                                }
-                                type="datetime-local"
-                              />
-                              <TextField
-                                label="Link Meet"
-                                value={edit.url}
-                                onChange={(value) =>
-                                  setEditingLive((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], url: value },
-                                  }))
-                                }
-                              />
-                            </div>
-                          ) : (
-                            <EditorialWorkoutCard
-                              title={item.title}
-                              meta={new Date(item.class_datetime).toLocaleString("es-AR")}
-                            />
-                          )}
-                          <div className="ds-pill-row">
-                            {edit ? (
-                              <PrimaryButton onClick={() => saveLive(item.id)}>
-                                Guardar cambios
-                              </PrimaryButton>
-                            ) : (
-                              <GhostButton onClick={() => startEditLive(item)}>
-                                Editar
-                              </GhostButton>
-                            )}
-                            <SecondaryButton onClick={() => deleteLive(item.id)}>
-                              Borrar
-                            </SecondaryButton>
-                          </div>
-                        </FloatingCard>
-                      );
-                    })}
+                    {fuerzaLive.length > 0 && (
+                      <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                        <table className="ds-clients-table ds-encounters-table">
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>Link</th>
+                              <th>Fecha</th>
+                              <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fuerzaLive.map((item) => {
+                              const edit = editingLive[item.id];
+                              return (
+                                <tr key={item.id}>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.title}
+                                        onChange={(event) =>
+                                          setEditingLive((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], title: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : item.title}
+                                  </td>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.url}
+                                        onChange={(event) =>
+                                          setEditingLive((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], url: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : (
+                                      <a className="ds-link-inline" href={item.meet_url} target="_blank" rel="noreferrer">
+                                        {item.meet_url}
+                                      </a>
+                                    )}
+                                  </td>
+                                  <td>{formatShortDate(item.created_at)}</td>
+                                  <td>
+                                    <div className="ds-client-row-actions">
+                                      {edit ? (
+                                        <button
+                                          type="button"
+                                          className="ds-encounter-action-btn ds-encounter-save-btn"
+                                          onClick={() => saveLive(item.id)}
+                                          aria-label="Guardar cambios"
+                                        >
+                                          <span aria-hidden>✓</span>
+                                        </button>
+                                      ) : (
+                                        <GhostButton className="ds-encounter-action-btn" onClick={() => startEditLive(item)}>
+                                          Editar
+                                        </GhostButton>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                        onClick={() => deleteLive(item.id)}
+                                        aria-label="Borrar clase en vivo"
+                                      >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                          <path d="M3 6h18" />
+                                          <path d="M8 6V4h8v2" />
+                                          <path d="M19 6l-1 14H6L5 6" />
+                                          <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </>
                 )}
               </>
@@ -1236,127 +1449,191 @@ export default function AdminPage() {
 
                 {encounterView.yoga === "recorded" && (
                   <>
-                    <p className="ds-micro">Clases grabadas de Yoga / Meditación</p>
                     {yogaRecorded.length === 0 && (
                       <p className="ds-description">No hay clases grabadas cargadas.</p>
                     )}
-                    {yogaRecorded.map((item) => {
-                      const edit = editingRecorded[item.id];
-                      return (
-                        <FloatingCard key={item.id} title={item.title} description="Grabada">
-                          {edit ? (
-                            <div className="ds-grid-2">
-                              <TextField
-                                label="Nombre"
-                                value={edit.title}
-                                onChange={(value) =>
-                                  setEditingRecorded((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], title: value },
-                                  }))
-                                }
-                              />
-                              <TextField
-                                label="Link YouTube"
-                                value={edit.url}
-                                onChange={(value) =>
-                                  setEditingRecorded((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], url: value },
-                                  }))
-                                }
-                              />
-                            </div>
-                          ) : (
-                            <EditorialWorkoutCard title={item.title} meta={item.youtube_url} />
-                          )}
-                          <div className="ds-pill-row">
-                            {edit ? (
-                              <PrimaryButton onClick={() => saveRecorded(item.id)}>
-                                Guardar cambios
-                              </PrimaryButton>
-                            ) : (
-                              <GhostButton onClick={() => startEditRecorded(item)}>
-                                Editar
-                              </GhostButton>
-                            )}
-                            <SecondaryButton onClick={() => deleteRecorded(item.id)}>
-                              Borrar
-                            </SecondaryButton>
-                          </div>
-                        </FloatingCard>
-                      );
-                    })}
+                    {yogaRecorded.length > 0 && (
+                      <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                        <table className="ds-clients-table ds-encounters-table">
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>Link</th>
+                              <th>Fecha</th>
+                              <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {yogaRecorded.map((item) => {
+                              const edit = editingRecorded[item.id];
+                              return (
+                                <tr key={item.id}>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.title}
+                                        onChange={(event) =>
+                                          setEditingRecorded((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], title: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : item.title}
+                                  </td>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.url}
+                                        onChange={(event) =>
+                                          setEditingRecorded((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], url: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : (
+                                      <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">
+                                        {item.youtube_url}
+                                      </a>
+                                    )}
+                                  </td>
+                                  <td>{formatShortDate(item.created_at)}</td>
+                                  <td>
+                                    <div className="ds-client-row-actions">
+                                      {edit ? (
+                                        <button
+                                          type="button"
+                                          className="ds-encounter-action-btn ds-encounter-save-btn"
+                                          onClick={() => saveRecorded(item.id)}
+                                          aria-label="Guardar cambios"
+                                        >
+                                          <span aria-hidden>✓</span>
+                                        </button>
+                                      ) : (
+                                        <GhostButton className="ds-encounter-action-btn" onClick={() => startEditRecorded(item)}>
+                                          Editar
+                                        </GhostButton>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                        onClick={() => deleteRecorded(item.id)}
+                                        aria-label="Borrar clase grabada"
+                                      >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                          <path d="M3 6h18" />
+                                          <path d="M8 6V4h8v2" />
+                                          <path d="M19 6l-1 14H6L5 6" />
+                                          <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </>
                 )}
 
                 {encounterView.yoga === "live" && (
                   <>
-                    <p className="ds-micro">Clases en vivo de Yoga / Meditación</p>
                     {yogaLive.length === 0 && (
                       <p className="ds-description">No hay clases en vivo cargadas.</p>
                     )}
-                    {yogaLive.map((item) => {
-                      const edit = editingLive[item.id];
-                      return (
-                        <FloatingCard key={item.id} title={item.title} description="Clase en vivo">
-                          {edit ? (
-                            <div className="ds-grid-3">
-                              <TextField
-                                label="Nombre"
-                                value={edit.title}
-                                onChange={(value) =>
-                                  setEditingLive((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], title: value },
-                                  }))
-                                }
-                              />
-                              <TextField
-                                label="Fecha y hora"
-                                value={edit.date}
-                                onChange={(value) =>
-                                  setEditingLive((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], date: value },
-                                  }))
-                                }
-                                type="datetime-local"
-                              />
-                              <TextField
-                                label="Link Meet"
-                                value={edit.url}
-                                onChange={(value) =>
-                                  setEditingLive((current) => ({
-                                    ...current,
-                                    [item.id]: { ...current[item.id], url: value },
-                                  }))
-                                }
-                              />
-                            </div>
-                          ) : (
-                            <EditorialWorkoutCard
-                              title={item.title}
-                              meta={new Date(item.class_datetime).toLocaleString("es-AR")}
-                            />
-                          )}
-                          <div className="ds-pill-row">
-                            {edit ? (
-                              <PrimaryButton onClick={() => saveLive(item.id)}>
-                                Guardar cambios
-                              </PrimaryButton>
-                            ) : (
-                              <GhostButton onClick={() => startEditLive(item)}>
-                                Editar
-                              </GhostButton>
-                            )}
-                            <SecondaryButton onClick={() => deleteLive(item.id)}>
-                              Borrar
-                            </SecondaryButton>
-                          </div>
-                        </FloatingCard>
-                      );
-                    })}
+                    {yogaLive.length > 0 && (
+                      <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                        <table className="ds-clients-table ds-encounters-table">
+                          <thead>
+                            <tr>
+                              <th>Nombre</th>
+                              <th>Link</th>
+                              <th>Fecha</th>
+                              <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {yogaLive.map((item) => {
+                              const edit = editingLive[item.id];
+                              return (
+                                <tr key={item.id}>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.title}
+                                        onChange={(event) =>
+                                          setEditingLive((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], title: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : item.title}
+                                  </td>
+                                  <td>
+                                    {edit ? (
+                                      <input
+                                        className="ds-input"
+                                        value={edit.url}
+                                        onChange={(event) =>
+                                          setEditingLive((current) => ({
+                                            ...current,
+                                            [item.id]: { ...current[item.id], url: event.target.value },
+                                          }))
+                                        }
+                                      />
+                                    ) : (
+                                      <a className="ds-link-inline" href={item.meet_url} target="_blank" rel="noreferrer">
+                                        {item.meet_url}
+                                      </a>
+                                    )}
+                                  </td>
+                                  <td>{formatShortDate(item.created_at)}</td>
+                                  <td>
+                                    <div className="ds-client-row-actions">
+                                      {edit ? (
+                                        <button
+                                          type="button"
+                                          className="ds-encounter-action-btn ds-encounter-save-btn"
+                                          onClick={() => saveLive(item.id)}
+                                          aria-label="Guardar cambios"
+                                        >
+                                          <span aria-hidden>✓</span>
+                                        </button>
+                                      ) : (
+                                        <GhostButton className="ds-encounter-action-btn" onClick={() => startEditLive(item)}>
+                                          Editar
+                                        </GhostButton>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                        onClick={() => deleteLive(item.id)}
+                                        aria-label="Borrar clase en vivo"
+                                      >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                          <path d="M3 6h18" />
+                                          <path d="M8 6V4h8v2" />
+                                          <path d="M19 6l-1 14H6L5 6" />
+                                          <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </>
                 )}
               </>
@@ -1382,53 +1659,93 @@ export default function AdminPage() {
 
             <ExpandableSection open={showWelcomeManager}>
               <>
-                {welcome.map((item) => {
-                  const edit = editingWelcome[item.id];
-                  return (
-                    <FloatingCard key={item.id} title={item.title} description="Video de bienvenida">
-                      {edit ? (
-                        <div className="ds-grid-2">
-                          <TextField
-                            label="Titulo"
-                            value={edit.title}
-                            onChange={(value) =>
-                              setEditingWelcome((current) => ({
-                                ...current,
-                                [item.id]: { ...current[item.id], title: value },
-                              }))
-                            }
-                          />
-                          <TextField
-                            label="Link YouTube"
-                            value={edit.url}
-                            onChange={(value) =>
-                              setEditingWelcome((current) => ({
-                                ...current,
-                                [item.id]: { ...current[item.id], url: value },
-                              }))
-                            }
-                          />
-                        </div>
-                      ) : (
-                        <EditorialWorkoutCard title={item.title} meta={item.youtube_url} />
-                      )}
-                      <div className="ds-pill-row">
-                        {edit ? (
-                          <PrimaryButton onClick={() => saveWelcome(item.id)}>
-                            Guardar cambios
-                          </PrimaryButton>
-                        ) : (
-                          <GhostButton onClick={() => startEditWelcome(item)}>
-                            Editar
-                          </GhostButton>
-                        )}
-                        <SecondaryButton onClick={() => deleteWelcome(item.id)}>
-                          Borrar
-                        </SecondaryButton>
-                      </div>
-                    </FloatingCard>
-                  );
-                })}
+                {welcome.length > 0 && (
+                  <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                    <table className="ds-clients-table ds-encounters-table">
+                      <thead>
+                        <tr>
+                          <th>Título</th>
+                          <th>Link</th>
+                          <th>Fecha</th>
+                          <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {welcome.map((item) => {
+                          const edit = editingWelcome[item.id];
+                          return (
+                            <tr key={item.id}>
+                              <td>
+                                {edit ? (
+                                  <input
+                                    className="ds-input"
+                                    value={edit.title}
+                                    onChange={(event) =>
+                                      setEditingWelcome((current) => ({
+                                        ...current,
+                                        [item.id]: { ...current[item.id], title: event.target.value },
+                                      }))
+                                    }
+                                  />
+                                ) : item.title}
+                              </td>
+                              <td>
+                                {edit ? (
+                                  <input
+                                    className="ds-input"
+                                    value={edit.url}
+                                    onChange={(event) =>
+                                      setEditingWelcome((current) => ({
+                                        ...current,
+                                        [item.id]: { ...current[item.id], url: event.target.value },
+                                      }))
+                                    }
+                                  />
+                                ) : (
+                                  <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">
+                                    {item.youtube_url}
+                                  </a>
+                                )}
+                              </td>
+                              <td>{formatShortDate(item.created_at)}</td>
+                              <td>
+                                <div className="ds-client-row-actions">
+                                  {edit ? (
+                                    <button
+                                      type="button"
+                                      className="ds-encounter-action-btn ds-encounter-save-btn"
+                                      onClick={() => saveWelcome(item.id)}
+                                      aria-label="Guardar cambios"
+                                    >
+                                      <span aria-hidden>✓</span>
+                                    </button>
+                                  ) : (
+                                    <GhostButton className="ds-encounter-action-btn" onClick={() => startEditWelcome(item)}>
+                                      Editar
+                                    </GhostButton>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                    onClick={() => deleteWelcome(item.id)}
+                                    aria-label="Borrar video de bienvenida"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                      <path d="M3 6h18" />
+                                      <path d="M8 6V4h8v2" />
+                                      <path d="M19 6l-1 14H6L5 6" />
+                                      <path d="M10 11v6M14 11v6" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 {welcome.length === 0 && (
                   <p className="ds-description">Aun no hay videos de bienvenida.</p>
                 )}

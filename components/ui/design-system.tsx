@@ -6,6 +6,7 @@ type ButtonProps = {
   onClick?: () => void;
   type?: "button" | "submit";
   disabled?: boolean;
+  form?: string;
   className?: string;
 };
 
@@ -84,7 +85,7 @@ export function Tabs({
   value,
   onChange,
 }: {
-  items: { id: string; label: string; icon?: ReactNode }[];
+  items: { id: string; label: string; shortLabel?: string; icon?: ReactNode }[];
   value: string;
   onChange: (id: string) => void;
 }) {
@@ -97,7 +98,10 @@ export function Tabs({
           className={`ds-pill ${value === item.id ? "is-active" : ""}`}
         >
           {item.icon && <span className="ds-tab-icon" aria-hidden>{item.icon}</span>}
-          <span className="ds-tab-label">{item.label}</span>
+          <span className="ds-tab-label ds-tab-label-long">{item.label}</span>
+          {item.shortLabel ? (
+            <span className="ds-tab-label ds-tab-label-short">{item.shortLabel}</span>
+          ) : null}
         </button>
       ))}
     </div>
@@ -109,6 +113,7 @@ export function PrimaryButton({
   onClick,
   type = "button",
   disabled,
+  form,
   className,
 }: ButtonProps) {
   return (
@@ -116,6 +121,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      form={form}
       className={`ds-btn-primary ${className ?? ""}`}
     >
       {children}
@@ -128,6 +134,7 @@ export function SecondaryButton({
   onClick,
   type = "button",
   disabled,
+  form,
   className,
 }: ButtonProps) {
   return (
@@ -135,6 +142,7 @@ export function SecondaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      form={form}
       className={`ds-btn-secondary ${className ?? ""}`}
     >
       {children}
@@ -147,6 +155,7 @@ export function GhostButton({
   onClick,
   type = "button",
   disabled,
+  form,
   className,
 }: ButtonProps) {
   return (
@@ -154,6 +163,7 @@ export function GhostButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      form={form}
       className={`ds-btn-ghost ${className ?? ""}`}
     >
       {children}
