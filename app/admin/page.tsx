@@ -1,7 +1,7 @@
 ﻿
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   AppShell,
@@ -50,7 +50,7 @@ type LiveClass = { id: string; area: Area; title: string; class_datetime: string
 type WelcomeVideo = { id: string; title: string; youtube_url: string };
 type EncounterView = "recorded" | "live";
 
-const tabs: { id: Tab; label: string; icon: JSX.Element }[] = [
+const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
   {
     id: "clientes",
     label: "Gestión de clientes",
