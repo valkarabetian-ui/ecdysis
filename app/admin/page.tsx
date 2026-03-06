@@ -1,7 +1,7 @@
 ﻿
 "use client";
 
-import { FormEvent, Fragment, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   AppShell,
@@ -149,7 +149,6 @@ export default function AdminPage() {
   const [welcome, setWelcome] = useState<WelcomeVideo[]>([]);
 
   const [newClient, setNewClient] = useState({ name: "", email: "" });
-  const [showCreateClientForm, setShowCreateClientForm] = useState(false);
   const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category });
   const [showExercises, setShowExercises] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState("");
@@ -290,6 +289,31 @@ export default function AdminPage() {
     [clients, clientSearch],
   );
 
+  const routinesForClient = (clientId: string) =>
+    routines.filter((routine) => {
+      if (routine.client_id !== clientId) return false;
+      if (routine.plan_type !== filterPlan) return false;
+      if (filterCat !== "todas" && routine.category !== filterCat) return false;
+
+      if (filterDateMode === "todas") return true;
+
+      const routineDate = routine.routine_date ?? "";
+      if (!routineDate) return false;
+
+      if (filterDateMode === "dia") {
+        if (!filterDateSingle) return true;
+        return routineDate === filterDateSingle;
+      }
+
+      if (filterDateMode === "rango") {
+        if (filterDateFrom && routineDate < filterDateFrom) return false;
+        if (filterDateTo && routineDate > filterDateTo) return false;
+        return true;
+      }
+
+      return true;
+    });
+
   const createClient = async (event: FormEvent) => {
     event.preventDefault();
     if (!newClient.name || !newClient.email) return;
@@ -312,7 +336,6 @@ export default function AdminPage() {
       setMsg(data.warning ?? "Cliente creado. Se envio un mail automatico para crear contraseÃ±a.");
       showSuccessToast(data.warning ?? "Cliente creado exitosamente.");
       setNewClient({ name: "", email: "" });
-      setShowCreateClientForm(false);
       await loadAll();
     } catch {
       setError("No se pudo crear el cliente. Verifica SUPABASE_SERVICE_ROLE_KEY y reinicia el servidor.");
@@ -717,14 +740,33 @@ export default function AdminPage() {
 
       {tab === "clientes" && (
         <>
-          <FloatingCard
-            title="Mis clientes"
-            headerRight={(
-              <PrimaryButton onClick={() => setShowCreateClientForm(true)}>
-                + Crear cliente
-              </PrimaryButton>
-            )}
-          >
+          <section className="ds-clientes-section">
+            <div className="ds-clientes-title-row">
+              <h2 className="ds-h2">Gestión de Clientes</h2>
+              <span className="ds-clientes-title-line" aria-hidden />
+            </div>
+
+            <div className="ds-clientes-create-card">
+              <p className="ds-clientes-kicker">Crear nuevo cliente</p>
+              <form onSubmit={createClient} className="ds-clientes-create-form">
+                <TextField
+                  label="Nombre completo"
+                  value={newClient.name}
+                  onChange={(value) => setNewClient({ ...newClient, name: value })}
+                  placeholder="Ej: Maria Perez"
+                />
+                <TextField
+                  label="Email"
+                  value={newClient.email}
+                  onChange={(value) => setNewClient({ ...newClient, email: value })}
+                  type="email"
+                  placeholder="maria@example.com"
+                />
+                <SecondaryButton type="submit" className="ds-clientes-create-btn">Crear cliente</SecondaryButton>
+              </form>
+            </div>
+
+            <p className="ds-clientes-list-kicker">Mis clientes ({filteredClients.length})</p>
             <input
               value={clientSearch}
               onChange={(event) => setClientSearch(event.target.value)}
@@ -732,231 +774,176 @@ export default function AdminPage() {
               className="ds-input"
             />
 
-            {showCreateClientForm && (
-              <div
-                className="ds-modal-overlay"
-                role="presentation"
-                onClick={() => setShowCreateClientForm(false)}
-              >
-                <div
-                  className="ds-modal-panel ds-animate-card"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-label="Crear cliente"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="ds-card-head">
-                    <h3 className="ds-h3">Crear cliente</h3>
-                    <GhostButton onClick={() => setShowCreateClientForm(false)}>
-                      Cerrar
-                    </GhostButton>
-                  </div>
-                  <p className="ds-description">
-                    Alta asistida con invitacion por email.
-                  </p>
-                  <form onSubmit={createClient} className="ds-stack-md">
-                    <TextField
-                      label="Nombre"
-                      value={newClient.name}
-                      onChange={(value) => setNewClient({ ...newClient, name: value })}
-                    />
-                    <TextField
-                      label="Mail"
-                      value={newClient.email}
-                      onChange={(value) => setNewClient({ ...newClient, email: value })}
-                      type="email"
-                    />
-                    <div className="ds-modal-actions">
-                      <SecondaryButton onClick={() => setShowCreateClientForm(false)}>
-                        Cancelar
-                      </SecondaryButton>
-                      <PrimaryButton type="submit">Crear</PrimaryButton>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
             {filteredClients.length > 0 && (
-              <div className="ds-clients-table-wrap">
-                <table className="ds-clients-table">
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>E-mail</th>
-                      <th>Fecha de alta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredClients.map((client) => {
-                      const isOpen = viewClient === client.id;
-                      const clientRoutines = routines.filter(
-                        (routine) => {
-                          if (routine.client_id !== client.id) return false;
-                          if (routine.plan_type !== filterPlan) return false;
-                          if (filterCat !== "todas" && routine.category !== filterCat) return false;
-
-                          if (filterDateMode === "todas") return true;
-
-                          const routineDate = routine.routine_date ?? "";
-                          if (!routineDate) return false;
-
-                          if (filterDateMode === "dia") {
-                            if (!filterDateSingle) return true;
-                            return routineDate === filterDateSingle;
-                          }
-
-                          if (filterDateMode === "rango") {
-                            if (filterDateFrom && routineDate < filterDateFrom) return false;
-                            if (filterDateTo && routineDate > filterDateTo) return false;
-                            return true;
-                          }
-
-                          return true;
-                        },
-                      );
-
-                      return (
-                        <Fragment key={client.id}>
-                          <tr
-                            className={`ds-client-main-row ${isOpen ? "is-open" : ""}`}
-                            onClick={() => {
-                              setViewClient((current) => (current === client.id ? "" : client.id));
-                              setSelectedRoutineIds([]);
-                            }}
-                          >
-                            <td>
-                              <div className="ds-client-name-cell">
-                                <span>{client.name}</span>
-                              </div>
-                            </td>
-                            <td>{client.email}</td>
-                            <td>
-                              {new Date(client.created_at).toLocaleDateString("es-AR", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              })}
-                            </td>
-                          </tr>
-                          <tr className={`ds-client-expanded-row ${isOpen ? "is-open" : ""}`}>
-                            <td colSpan={3}>
-                              <ExpandableSection open={isOpen}>
-                                <div className="ds-client-expanded-content">
-                                  <div className="ds-client-expanded-actions">
-                                    <GhostButton onClick={() => setViewClient("")}>
-                                      Ocultar rutina
-                                    </GhostButton>
-                                    <SecondaryButton onClick={() => removeClient(client.id)}>
-                                      Eliminar cliente
-                                    </SecondaryButton>
-                                  </div>
-                                  <div className="ds-grid-3">
-                                    <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
-                                      <option value="semanal">Semanal</option>
-                                      <option value="mensual">Mensual</option>
-                                    </SelectField>
-                                    <SelectField label="Categoria" value={filterCat} onChange={(value) => setFilterCat(value as "todas" | Category)}>
-                                      <option value="todas">Fuerza y movilidad</option>
-                                      <option value="fuerza">Fuerza</option>
-                                      <option value="movilidad">Movilidad</option>
-                                    </SelectField>
-                                    <SelectField label="Filtrar por fecha" value={filterDateMode} onChange={(value) => setFilterDateMode(value as "todas" | "dia" | "rango")}>
-                                      <option value="todas">Todas las fechas</option>
-                                      <option value="dia">Solo un dia</option>
-                                      <option value="rango">Rango de dias</option>
-                                    </SelectField>
-                                  </div>
-                                  {filterDateMode === "dia" && (
-                                    <div className="ds-grid-2">
-                                      <TextField
-                                        label="Dia"
-                                        value={filterDateSingle}
-                                        onChange={setFilterDateSingle}
-                                        type="date"
-                                      />
-                                    </div>
-                                  )}
-                                  {filterDateMode === "rango" && (
-                                    <div className="ds-grid-2">
-                                      <TextField
-                                        label="Desde"
-                                        value={filterDateFrom}
-                                        onChange={setFilterDateFrom}
-                                        type="date"
-                                      />
-                                      <TextField
-                                        label="Hasta"
-                                        value={filterDateTo}
-                                        onChange={setFilterDateTo}
-                                        type="date"
-                                      />
-                                    </div>
-                                  )}
-                                  {clientRoutines.length > 0 && (
-                                    <div className="ds-pill-row">
-                                      <GhostButton
-                                        onClick={() =>
-                                          setSelectedRoutineIds((current) => {
-                                            const visibleIds = clientRoutines.map((routine) => routine.id);
-                                            const allSelected = visibleIds.every((id) => current.includes(id));
-                                            if (allSelected) {
-                                              return current.filter((id) => !visibleIds.includes(id));
-                                            }
-                                            return Array.from(new Set([...current, ...visibleIds]));
-                                          })
-                                        }
-                                      >
-                                        Seleccionar todos
-                                      </GhostButton>
-                                      <SecondaryButton onClick={deleteSelectedRoutines}>
-                                        Eliminar seleccionados ({selectedRoutineIds.length})
-                                      </SecondaryButton>
-                                    </div>
-                                  )}
-                                  {clientRoutines.map((routine) => (
-                                    <EditorialWorkoutCard
-                                      key={routine.id}
-                                      title={`${exerciseName(routine.exercise_id)} - ${routine.repetitions} reps`}
-                                      meta={`${routine.routine_date ?? routine.day} / ${routine.category}`}
-                                      rightSlot={
-                                        <div className="ds-pill-row">
-                                          <input
-                                            type="checkbox"
-                                            checked={selectedRoutineIds.includes(routine.id)}
-                                            onChange={(event) => {
-                                              if (event.target.checked) {
-                                                setSelectedRoutineIds((current) => [...current, routine.id]);
-                                                return;
-                                              }
-                                              setSelectedRoutineIds((current) =>
-                                                current.filter((id) => id !== routine.id),
-                                              );
-                                            }}
-                                            aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}
-                                          />
-                                        </div>
-                                      }
-                                    />
-                                  ))}
-                                  {clientRoutines.length === 0 && (
-                                    <p className="ds-description">No hay rutinas para este filtro.</p>
-                                  )}
-                                </div>
-                              </ExpandableSection>
-                            </td>
-                          </tr>
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="ds-client-list">
+                {filteredClients.map((client) => (
+                  <article key={client.id} className="ds-client-line">
+                    <div className="ds-client-line-main">
+                      <div className="ds-client-badge" aria-hidden>
+                        {client.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="ds-client-line-copy">
+                        <h3 className="ds-client-line-name">{client.name}</h3>
+                        <p className="ds-client-line-email">{client.email}</p>
+                      </div>
+                    </div>
+                    <div className="ds-client-line-actions">
+                      <button
+                        type="button"
+                        className="ds-client-action"
+                        onClick={() => {
+                          setViewClient(client.id);
+                          setSelectedRoutineIds([]);
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                          <circle cx="12" cy="12" r="2.8" />
+                        </svg>
+                        <span>Ver rutina</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="ds-client-action ds-client-action-danger"
+                        onClick={() => removeClient(client.id)}
+                        aria-label={`Eliminar cliente ${client.name}`}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M19 6l-1 14H6L5 6" />
+                          <path d="M10 11v6M14 11v6" />
+                        </svg>
+                        <span>Eliminar</span>
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
             )}
+            {viewClient && (() => {
+              const currentClient = clients.find((item) => item.id === viewClient);
+              if (!currentClient) return null;
+              const clientRoutines = routinesForClient(currentClient.id);
+              return (
+                <div className="ds-modal-overlay" role="presentation" onClick={() => setViewClient("")}>
+                  <div
+                    className="ds-modal-panel ds-routine-modal-panel ds-animate-card"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`Rutina de ${currentClient.name}`}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="ds-routine-modal-head">
+                      <div>
+                        <h3 className="ds-h2">Rutina de {currentClient.name}</h3>
+                        <p className="ds-micro">Gestión de entrenamientos</p>
+                      </div>
+                      <button type="button" className="ds-routine-close" onClick={() => setViewClient("")} aria-label="Cerrar">
+                        ×
+                      </button>
+                    </div>
+                    <div className="ds-routine-modal-body">
+                      <div className="ds-grid-3">
+                        <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
+                          <option value="semanal">Semanal</option>
+                          <option value="mensual">Mensual</option>
+                        </SelectField>
+                        <SelectField label="Categoria" value={filterCat} onChange={(value) => setFilterCat(value as "todas" | Category)}>
+                          <option value="todas">Fuerza y movilidad</option>
+                          <option value="fuerza">Fuerza</option>
+                          <option value="movilidad">Movilidad</option>
+                        </SelectField>
+                        <SelectField label="Filtrar por fecha" value={filterDateMode} onChange={(value) => setFilterDateMode(value as "todas" | "dia" | "rango")}>
+                          <option value="todas">Todas las fechas</option>
+                          <option value="dia">Solo un dia</option>
+                          <option value="rango">Rango de dias</option>
+                        </SelectField>
+                      </div>
+                      {filterDateMode === "dia" && (
+                        <div className="ds-grid-2">
+                          <TextField
+                            label="Dia"
+                            value={filterDateSingle}
+                            onChange={setFilterDateSingle}
+                            type="date"
+                          />
+                        </div>
+                      )}
+                      {filterDateMode === "rango" && (
+                        <div className="ds-grid-2">
+                          <TextField
+                            label="Desde"
+                            value={filterDateFrom}
+                            onChange={setFilterDateFrom}
+                            type="date"
+                          />
+                          <TextField
+                            label="Hasta"
+                            value={filterDateTo}
+                            onChange={setFilterDateTo}
+                            type="date"
+                          />
+                        </div>
+                      )}
+                      {clientRoutines.length > 0 && (
+                        <div className="ds-pill-row">
+                          <GhostButton
+                            onClick={() =>
+                              setSelectedRoutineIds((current) => {
+                                const visibleIds = clientRoutines.map((routine) => routine.id);
+                                const allSelected = visibleIds.every((id) => current.includes(id));
+                                if (allSelected) {
+                                  return current.filter((id) => !visibleIds.includes(id));
+                                }
+                                return Array.from(new Set([...current, ...visibleIds]));
+                              })
+                            }
+                          >
+                            Seleccionar todos
+                          </GhostButton>
+                          <SecondaryButton onClick={deleteSelectedRoutines}>
+                            Eliminar seleccionados ({selectedRoutineIds.length})
+                          </SecondaryButton>
+                        </div>
+                      )}
+                      {clientRoutines.map((routine) => (
+                        <EditorialWorkoutCard
+                          key={routine.id}
+                          title={`${exerciseName(routine.exercise_id)} - ${routine.repetitions} reps`}
+                          meta={`${routine.routine_date ?? routine.day} / ${routine.category}`}
+                          rightSlot={
+                            <div className="ds-pill-row">
+                              <input
+                                type="checkbox"
+                                checked={selectedRoutineIds.includes(routine.id)}
+                                onChange={(event) => {
+                                  if (event.target.checked) {
+                                    setSelectedRoutineIds((current) => [...current, routine.id]);
+                                    return;
+                                  }
+                                  setSelectedRoutineIds((current) =>
+                                    current.filter((id) => id !== routine.id),
+                                  );
+                                }}
+                                aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}
+                              />
+                            </div>
+                          }
+                        />
+                      ))}
+                      {clientRoutines.length === 0 && (
+                        <p className="ds-description">No hay rutinas para este filtro.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             {filteredClients.length === 0 && (
               <p className="ds-description">No hay clientes con ese nombre.</p>
             )}
-          </FloatingCard>
+          </section>
         </>
       )}
 

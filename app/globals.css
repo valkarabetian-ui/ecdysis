@@ -49,6 +49,13 @@ body {
   overflow-x: hidden;
 }
 
+input,
+button,
+select,
+textarea {
+  font: inherit;
+}
+
 html {
   scroll-behavior: smooth;
   width: 100%;
@@ -572,6 +579,207 @@ html {
   display: flex;
   justify-content: flex-end;
   gap: var(--ds-space-2);
+}
+
+.ds-clientes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ds-clientes-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ds-clientes-title-row .ds-h2 {
+  margin: 0;
+  white-space: nowrap;
+  color: #f3e9dc;
+}
+
+.ds-clientes-title-line {
+  height: 1px;
+  flex: 1;
+  background: rgba(243, 233, 220, 0.28);
+}
+
+.ds-clientes-create-card {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  background: rgba(255, 250, 244, 0.6);
+  padding: 18px 20px 22px;
+}
+
+.ds-clientes-kicker {
+  margin: 0 0 14px;
+  color: rgba(82, 81, 76, 0.62);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 800;
+  position: relative;
+  padding-left: 12px;
+}
+
+.ds-clientes-kicker::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff6a00;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ds-clientes-create-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.ds-clientes-create-btn {
+  min-height: 52px;
+  padding: 0 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+
+.ds-clientes-list-kicker {
+  margin: 2px 0 -6px;
+  color: rgba(243, 233, 220, 0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.ds-client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ds-client-line {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  background: rgba(255, 250, 244, 0.62);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ds-client-line-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ds-client-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(65, 70, 66, 0.55);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.ds-client-line-copy {
+  min-width: 0;
+}
+
+.ds-client-line-name {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ds-client-line-email {
+  margin: 3px 0 0;
+  color: rgba(82, 81, 76, 0.58);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.ds-client-line-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.ds-client-action {
+  min-height: 48px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.5);
+  color: rgba(58, 86, 53, 0.92);
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.ds-client-action svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ds-client-action-danger {
+  border-color: rgba(233, 141, 131, 0.28);
+  color: #ff4040;
+  background: rgba(255, 241, 241, 0.5);
+}
+
+@media (max-width: 920px) {
+  .ds-clientes-section {
+    gap: 16px;
+  }
+
+  .ds-clientes-create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .ds-clientes-create-btn {
+    width: 100%;
+  }
+
+  .ds-client-line {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+  }
+
+  .ds-client-line-name {
+    font-size: 1.45rem;
+  }
+
+  .ds-client-line-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
 }
 
 .ds-encounters-table-wrap {
@@ -1126,8 +1334,8 @@ html {
 
 .ds-admin-page-title {
   margin: 0 0 var(--ds-space-1);
-  color: var(--ds-accent);
-  text-shadow: none;
+  color: #f3e9dc;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
   font-size: clamp(1.7rem, 3.2vw, 2.2rem);
 }
 
@@ -1500,16 +1708,16 @@ html {
 
 .ds-login-shell {
   width: 100%;
-  max-width: 780px;
-  border-radius: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  max-width: 398px;
+  border-radius: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.24)),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.24)),
     radial-gradient(circle at 82% 22%, rgba(236, 193, 137, 0.18), transparent 38%);
-  backdrop-filter: blur(16px) saturate(1.1);
-  -webkit-backdrop-filter: blur(16px) saturate(1.1);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  padding: 48px 44px 36px;
+  backdrop-filter: blur(15px) saturate(1.08);
+  -webkit-backdrop-filter: blur(15px) saturate(1.08);
+  box-shadow: 0 24px 42px rgba(0, 0, 0, 0.14);
+  padding: 38px 40px 32px;
 }
 
 .ds-login-head {
@@ -1519,62 +1727,79 @@ html {
 
 .ds-login-title {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.08;
-  color: #314239;
-  font-weight: 700;
+  font-size: clamp(2.2rem, 3.6vw, 3rem);
+  line-height: 1.04;
+  color: rgba(255, 255, 255, 0.96);
+  font-weight: 800;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .ds-login-subtitle {
   margin: 10px 0 0;
-  color: #667267;
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  font-weight: 700;
+}
+
+.ds-login-subtitle-line {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ds-login-subtitle-line::before,
+.ds-login-subtitle-line::after {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: rgba(213, 123, 14, 0.38);
 }
 
 .ds-login-form-card {
-  border-radius: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0.34));
-  box-shadow:
-    0 16px 34px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.58);
-  padding: 30px 30px 28px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 8px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.ds-login-form-title {
-  margin: 0;
-  color: #34443d;
-  font-size: 2rem;
-  line-height: 1.1;
-  font-weight: 700;
+  gap: 14px;
 }
 
 .ds-login-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .ds-login-label {
-  font-size: 1rem;
-  color: #6a7370;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.76);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 700;
 }
 
 .ds-login-input {
   width: 100%;
-  min-height: 58px;
-  border: 1px solid rgba(55, 64, 56, 0.1);
-  background: rgba(246, 248, 248, 0.9);
-  color: #414c46;
-  border-radius: 16px;
-  padding: 14px 18px;
-  font-size: 1rem;
+  min-height: 56px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  padding: 12px 22px;
+  font-size: 1.1rem;
+  font-weight: 500;
   outline: none;
   transition: box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.ds-login-input::placeholder {
+  color: rgba(255, 255, 255, 0.62);
+  font-weight: 500;
 }
 
 .ds-login-input:focus {
@@ -1597,43 +1822,68 @@ html {
   transform: translateY(-50%);
   width: 32px;
   height: 32px;
+  display: grid;
+  place-items: center;
   border: 0;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
-  font-size: 20px;
-  line-height: 1;
-  opacity: 0.72;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ds-login-eye svg {
+  width: 15px;
+  height: 15px;
 }
 
 .ds-login-forgot-link {
   border: 0;
   background: transparent;
-  color: #646d68;
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
   padding: 0;
-  text-align: left;
+  text-align: right;
   cursor: pointer;
 }
 
+.ds-login-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
 .ds-login-cta {
-  margin-top: 4px;
+  margin-top: 10px;
   width: 100%;
-  min-height: 58px;
+  min-height: 52px;
   border: 0;
   border-radius: 999px;
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  background: linear-gradient(145deg, #ee9a2b 0%, #d57b0e 100%);
-  box-shadow: 0 12px 22px rgba(213, 123, 14, 0.28);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  background: linear-gradient(145deg, #2f5741 0%, #284a35 100%);
+  box-shadow: 0 8px 16px rgba(39, 73, 51, 0.22);
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 180ms ease;
 }
 
 .ds-login-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 16px 30px rgba(213, 123, 14, 0.34);
+  box-shadow: 0 14px 26px rgba(39, 73, 51, 0.31);
+}
+
+.ds-login-input:-webkit-autofill,
+.ds-login-input:-webkit-autofill:hover,
+.ds-login-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.96);
+  transition: background-color 9999s ease-out 0s;
 }
 
 .ds-login-cta:disabled {
@@ -1649,27 +1899,27 @@ html {
 
 @media (max-width: 768px) {
   .ds-login-shell {
-    max-width: 520px;
-    padding: 30px 18px 20px;
-    border-radius: 24px;
+    max-width: 420px;
+    padding: 32px 22px 24px;
+    border-radius: 30px;
   }
 
   .ds-login-head {
-    margin-bottom: 18px;
+    margin-bottom: 20px;
   }
 
   .ds-login-form-card {
-    padding: 20px 16px 18px;
-    border-radius: 20px;
-  }
-
-  .ds-login-form-title {
-    font-size: 1.9rem;
+    padding: 0;
   }
 
   .ds-login-input,
   .ds-login-cta {
-    min-height: 52px;
+    min-height: 54px;
+  }
+
+  .ds-login-title {
+    font-size: clamp(1.95rem, 8.5vw, 2.35rem);
+    white-space: normal;
   }
 }
 
@@ -1931,6 +2181,53 @@ html {
   display: flex;
   justify-content: flex-end;
   gap: var(--ds-space-2);
+}
+
+.ds-routine-modal-panel {
+  width: min(1020px, 94vw);
+  max-height: 86vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ds-routine-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(165deg, rgba(58, 86, 53, 0.95), rgba(58, 86, 53, 0.78));
+}
+
+.ds-routine-modal-head .ds-h2 {
+  color: #f4e2d0;
+}
+
+.ds-routine-modal-head .ds-micro {
+  color: rgba(244, 226, 208, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ds-routine-close {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(244, 226, 208, 0.32);
+  background: rgba(244, 226, 208, 0.12);
+  color: #f4e2d0;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.ds-routine-modal-body {
+  padding: var(--ds-space-3);
+  max-height: calc(86vh - 120px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
 }
 
 .ds-check {

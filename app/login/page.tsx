@@ -4,6 +4,35 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+function PasswordVisibilityIcon({ isVisible }: { isVisible: boolean }) {
+  if (isVisible) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M3 3L21 21M10.58 10.58C10.21 10.95 10 11.46 10 12C10 13.1 10.9 14 12 14C12.54 14 13.05 13.79 13.42 13.42M9.88 5.09C10.56 4.93 11.27 4.85 12 4.85C17.52 4.85 21.61 9.03 22.8 11.32C22.93 11.54 23 11.77 23 12C23 12.23 22.93 12.46 22.8 12.68C22.37 13.51 21.46 14.82 20.11 16.03M6.1 6.1C3.95 7.32 2.45 9.29 1.2 11.32C1.07 11.54 1 11.77 1 12C1 12.23 1.07 12.46 1.2 12.68C2.39 14.97 6.48 19.15 12 19.15C13.58 19.15 15.03 18.81 16.33 18.24"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M1 12C2.19 9.71 6.28 5.53 11.8 5.53C17.32 5.53 21.41 9.71 22.6 12C21.41 14.29 17.32 18.47 11.8 18.47C6.28 18.47 2.19 14.29 1 12Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="11.8" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -203,20 +232,16 @@ export default function LoginPage() {
       <section className="ds-login-shell">
         <header className="ds-login-head">
           <h1 className="ds-login-title">
-            {isPasswordResetFlow ? "Crea tu nueva contraseña" : "Bienvenido de nuevo"}
+            {isPasswordResetFlow ? "Nueva contraseña" : "Práctica Viva"}
           </h1>
-          <p className="ds-login-subtitle">
+          <p className="ds-login-subtitle ds-login-subtitle-line">
             {isPasswordResetFlow
-              ? "Defínela una sola vez para ingresar."
-              : "Inicia sesión para continuar"}
+              ? "Definí tu nuevo acceso"
+              : "Entrená tu evolución"}
           </p>
         </header>
 
         <div className="ds-login-form-card">
-          <h2 className="ds-login-form-title">
-            {isPasswordResetFlow ? "Nueva contraseña" : "Iniciar sesión"}
-          </h2>
-
           {!isPasswordResetFlow ? (
             <>
               <label className="ds-login-field">
@@ -225,7 +250,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   type="email"
-                  placeholder="nombre@dominio.com"
+                  placeholder="hola@practicaviva.com"
                   className="ds-login-input"
                 />
               </label>
@@ -237,7 +262,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     type={showPassword ? "text" : "password"}
-                    placeholder="•••••"
+                    placeholder="••••••••"
                     className="ds-login-input"
                   />
                   <button
@@ -246,17 +271,19 @@ export default function LoginPage() {
                     onClick={() => setShowPassword((current) => !current)}
                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
-                    {showPassword ? "🙈" : "👁"}
+                    <PasswordVisibilityIcon isVisible={showPassword} />
                   </button>
                 </div>
               </label>
 
-              <button type="button" className="ds-login-forgot-link" onClick={handleForgotPassword}>
-                ¿Olvidaste tu contraseña?
-              </button>
+              <div className="ds-login-forgot-row">
+                <button type="button" className="ds-login-forgot-link" onClick={handleForgotPassword}>
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
 
               <button type="button" onClick={handleLogin} disabled={loading} className="ds-login-cta">
-                {loading ? "Ingresando..." : "Iniciar sesión"}
+                {loading ? "Ingresando..." : "Ingresar"}
               </button>
             </>
           ) : (
@@ -277,7 +304,7 @@ export default function LoginPage() {
                     onClick={() => setShowResetPassword((current) => !current)}
                     aria-label={showResetPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
-                    {showResetPassword ? "🙈" : "👁"}
+                    <PasswordVisibilityIcon isVisible={showResetPassword} />
                   </button>
                 </div>
               </label>
