@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --font-open-sans: "Segoe UI", "Trebuchet MS", "Verdana", "Geneva", sans-serif;
   --pv-blue: #3f6343;
   --pv-gold: #f7d232;
   --pv-orange: #f36f36;

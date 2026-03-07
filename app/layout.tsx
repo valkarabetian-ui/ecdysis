@@ -1,12 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Sora } from "next/font/google";
 import "./globals.css";
-
-const sora = Sora({
-  variable: "--font-open-sans",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
-  subsets: ["latin", "latin-ext"],
-});
 
 export const metadata: Metadata = {
   title: "Práctica viva",
@@ -30,7 +23,7 @@ export default function RootLayout({
       <head>
         <meta charSet="UTF-8" />
       </head>
-      <body className={`${sora.variable} ${sora.className} antialiased`}>
+      <body className="antialiased">
         {children}
       </body>
     </html>
