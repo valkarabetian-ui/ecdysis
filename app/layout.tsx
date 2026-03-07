@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Open_Sans } from "next/font/google";
+import { Sora } from "next/font/google";
 import "./globals.css";
 
-const openSans = Open_Sans({
+const sora = Sora({
   variable: "--font-open-sans",
-  weight: ["300", "400", "600", "700"],
-  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default function RootLayout({
       <head>
         <meta charSet="UTF-8" />
       </head>
-      <body className={`${openSans.variable} antialiased`}>
+      <body className={`${sora.variable} ${sora.className} antialiased`}>
         {children}
       </body>
     </html>

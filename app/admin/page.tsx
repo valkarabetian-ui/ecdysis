@@ -2,6 +2,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { supabase } from "@/lib/supabase";
 import {
   AppShell,
@@ -130,6 +131,15 @@ const formatShortDate = (isoDate?: string | null) => {
     month: "2-digit",
     year: "numeric",
   });
+};
+
+const isYouTubeUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname.includes("youtube.com") || parsed.hostname.includes("youtu.be");
+  } catch {
+    return false;
+  }
 };
 
 export default function AdminPage() {
@@ -344,7 +354,12 @@ export default function AdminPage() {
     }
   };
 
-  const removeClient = async (clientId: string) => {
+  const removeClient = async (clientId: string, clientName: string) => {
+    const accepted = window.confirm(
+      `Vas a eliminar al cliente "${clientName}". Esta accion no se puede deshacer. Queres continuar?`,
+    );
+    if (!accepted) return;
+
     setSaving(true);
     const res = await fetch(`/api/admin/clients?id=${clientId}`, { method: "DELETE" });
     const data = await res.json();
@@ -384,6 +399,10 @@ export default function AdminPage() {
   const createExercise = async (event: FormEvent) => {
     event.preventDefault();
     if (!newEx.name || !newEx.gifUrl) return;
+    if (!isYouTubeUrl(newEx.gifUrl)) {
+      setError("Ingresa una URL valida de YouTube para el ejercicio.");
+      return;
+    }
     setSaving(true);
     const { error: insertError } = await supabase.from("exercises").insert({
       name: newEx.name,
@@ -721,33 +740,29 @@ export default function AdminPage() {
   const yogaLive = live.filter((item) => item.area === "yoga");
 
   return (
-    <AppShell title="" kicker="">
-      <h1 className="ds-h1 ds-admin-page-title">Práctica viva</h1>
-      {toastMessage && (
-        <div className="ds-toast" role="status" aria-live="polite">
-          {toastMessage}
-        </div>
-      )}
-      {loading && (
-        <div className="ds-stack-md">
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={3} />
-        </div>
-      )}
-      {saving && <p className="ds-description">Guardando cambios...</p>}
-      {error && <p className="ds-description">{error}</p>}
-      {msg && <p className="ds-description">{msg}</p>}
+    <ProtectedRoute allowedRole="admin">
+      <div className="ds-admin-scroll-root">
+        <AppShell title="" kicker="">
+        <h1 className="ds-h1 ds-admin-page-title">Práctica viva</h1>
+        {toastMessage && (
+          <div className="ds-toast" role="status" aria-live="polite">
+            {toastMessage}
+          </div>
+        )}
+        {loading && (
+          <div className="ds-stack-md">
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={3} />
+          </div>
+        )}
+        {saving && <p className="ds-description">Guardando cambios...</p>}
+        {error && <p className="ds-description">{error}</p>}
+        {msg && <p className="ds-description">{msg}</p>}
 
       {tab === "clientes" && (
         <>
           <section className="ds-clientes-section">
-            <div className="ds-clientes-title-row">
-              <h2 className="ds-h2">Gestión de Clientes</h2>
-              <span className="ds-clientes-title-line" aria-hidden />
-            </div>
-
-            <div className="ds-clientes-create-card">
-              <p className="ds-clientes-kicker">Crear nuevo cliente</p>
+            <FloatingCard title="Crear cliente">
               <form onSubmit={createClient} className="ds-clientes-create-form">
                 <TextField
                   label="Nombre completo"
@@ -764,7 +779,7 @@ export default function AdminPage() {
                 />
                 <SecondaryButton type="submit" className="ds-clientes-create-btn">Crear cliente</SecondaryButton>
               </form>
-            </div>
+            </FloatingCard>
 
             <p className="ds-clientes-list-kicker">Mis clientes ({filteredClients.length})</p>
             <input
@@ -805,7 +820,7 @@ export default function AdminPage() {
                       <button
                         type="button"
                         className="ds-client-action ds-client-action-danger"
-                        onClick={() => removeClient(client.id)}
+                        onClick={() => removeClient(client.id, client.name)}
                         aria-label={`Eliminar cliente ${client.name}`}
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -966,8 +981,8 @@ export default function AdminPage() {
                 </SelectField>
               </div>
               <div className="ds-create-exercise-row-bottom">
-                <TextField label="URL GIF" value={newEx.gifUrl} onChange={(value) => setNewEx({ ...newEx, gifUrl: value })} />
-                <PrimaryButton type="submit">Crear ejercicio</PrimaryButton>
+                <TextField label="URL YouTube" value={newEx.gifUrl} onChange={(value) => setNewEx({ ...newEx, gifUrl: value })} />
+                <PrimaryButton type="submit" className="ds-create-exercise-btn">Crear ejercicio</PrimaryButton>
               </div>
             </form>
 
@@ -997,7 +1012,7 @@ export default function AdminPage() {
                         <tr>
                           <th>Nombre</th>
                           <th>Categoría</th>
-                          <th>GIF</th>
+                          <th>Video</th>
                           <th className="ds-encounter-actions-col" aria-label="Acciones" />
                         </tr>
                       </thead>
@@ -1008,7 +1023,7 @@ export default function AdminPage() {
                             <td>{exercise.category}</td>
                             <td>
                               <a className="ds-link-inline" href={exercise.gif_url} target="_blank" rel="noreferrer">
-                                Ver GIF
+                                Ver video
                               </a>
                             </td>
                             <td>
@@ -1742,11 +1757,13 @@ export default function AdminPage() {
         </>
       )}
 
-      <BottomNavigation
-        items={tabs.map((item) => ({ id: item.id, label: item.label }))}
-        value={tab}
-        onChange={(value) => setTab(value as Tab)}
-      />
-    </AppShell>
+          <BottomNavigation
+            items={tabs.map((item) => ({ id: item.id, label: item.label }))}
+            value={tab}
+            onChange={(value) => setTab(value as Tab)}
+          />
+        </AppShell>
+      </div>
+    </ProtectedRoute>
   );
 }

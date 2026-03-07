@@ -3,6 +3,7 @@
 
 import { TouchEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { supabase } from "@/lib/supabase";
 import {
   AppShell,
@@ -33,7 +34,13 @@ type Routine = {
 };
 type Exercise = { id: string; name: string; gif_url: string };
 type WelcomeVideo = { id: string; title: string; youtube_url: string };
-type RecordedClass = { id: string; area: "fuerza" | "yoga"; title: string; youtube_url: string };
+type RecordedClass = {
+  id: string;
+  area: "fuerza" | "yoga";
+  title: string;
+  youtube_url: string;
+  created_at?: string;
+};
 type LiveClass = {
   id: string;
   area?: "fuerza" | "yoga";
@@ -138,6 +145,7 @@ export default function ClientePage() {
   const [libraryCategory, setLibraryCategory] = useState<"yoga" | "fuerza">(
     "yoga",
   );
+  const [recordedSort, setRecordedSort] = useState<"recent" | "old">("recent");
   const [pullDistance, setPullDistance] = useState(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
@@ -240,7 +248,10 @@ export default function ClientePage() {
 
     const [welcomeQ, recordedQ, liveQ, completionsQ, yogaViewsQ, meetQ, welcomeViewsQ] = await Promise.all([
       supabase.from("welcome_videos").select("id, title, youtube_url").order("created_at", { ascending: true }),
-      supabase.from("recorded_classes").select("id, area, title, youtube_url").order("created_at", { ascending: false }),
+      supabase
+        .from("recorded_classes")
+        .select("id, area, title, youtube_url, created_at")
+        .order("created_at", { ascending: false }),
       supabase
         .from("live_classes")
         .select("id, area, title, class_datetime, meet_url")
@@ -450,6 +461,26 @@ export default function ClientePage() {
       .filter((item) => item.parsed >= now)
       .sort((a, b) => a.parsed.getTime() - b.parsed.getTime())[0];
   }, [liveClasses]);
+
+  const displayedRecordedYoga = useMemo(() => {
+    const list = [...recordedYoga];
+    list.sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return recordedSort === "recent" ? bTime - aTime : aTime - bTime;
+    });
+    return list;
+  }, [recordedYoga, recordedSort]);
+
+  const displayedRecordedFuerza = useMemo(() => {
+    const list = [...recordedFuerza];
+    list.sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return recordedSort === "recent" ? bTime - aTime : aTime - bTime;
+    });
+    return list;
+  }, [recordedFuerza, recordedSort]);
 
   const nextLiveCountdown = (() => {
     if (!nextLive) return "";
@@ -751,7 +782,6 @@ export default function ClientePage() {
       <AppShell
         kicker=""
         title="Práctica viva"
-        subtitle="Bienestar desde dentro hacia afuera."
       >
         <FloatingCard title="Cargando" description="Sincronizando tu experiencia.">
           <SkeletonCard lines={3} />
@@ -768,7 +798,6 @@ export default function ClientePage() {
       <AppShell
         kicker=""
         title="Práctica viva"
-        subtitle="Bienestar desde dentro hacia afuera."
       >
         <FloatingCard
           title="\u00a1Hoy ya cumpliste! Muy bien."
@@ -781,7 +810,8 @@ export default function ClientePage() {
   }
 
   return (
-    <AppShell kicker="" title="Práctica viva" subtitle="Bienestar desde dentro hacia afuera.">
+    <ProtectedRoute allowedRole="cliente">
+      <AppShell kicker="" title="Práctica viva">
       <div
         className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}
         style={{
@@ -1051,6 +1081,8 @@ export default function ClientePage() {
 
                 {todayPlan.map((item, idx) => {
                   const key = `${todayDateISO}-${idx}`;
+                  const exerciseUrl = exerciseById[item.exercise_id]?.gifUrl ?? "";
+                  const exercisePreviewUrl = getYouTubeThumbnail(exerciseUrl) || exerciseUrl;
                   return (
                     <EditorialWorkoutCard
                       key={key}
@@ -1058,12 +1090,12 @@ export default function ClientePage() {
                       meta={item.category}
                       rightSlot={
                         <div className="ds-pill-row">
-                          {exerciseById[item.exercise_id]?.gifUrl && (
+                          {exercisePreviewUrl && (
                             <>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={exerciseById[item.exercise_id]?.gifUrl}
-                                alt={`GIF ${exerciseById[item.exercise_id]?.name ?? "ejercicio"}`}
+                                src={exercisePreviewUrl}
+                                alt={`Video ${exerciseById[item.exercise_id]?.name ?? "ejercicio"}`}
                                 className="ds-gif-thumb"
                                 loading="lazy"
                               />
@@ -1125,7 +1157,7 @@ export default function ClientePage() {
                     />
                   </div>
                   <div className="ds-library-live-content">
-                    <h4 className="ds-h3">{nextLive.title}</h4>
+                    <h4 className="ds-h3 ds-library-live-video-title" style={{ color: "#ece8df" }}>{nextLive.title}</h4>
                     <p className="ds-micro">
                       {new Date(nextLive.class_datetime).toLocaleDateString("es-AR")},{" "}
                       {new Date(nextLive.class_datetime).toLocaleTimeString("es-AR", {
@@ -1143,18 +1175,33 @@ export default function ClientePage() {
             </div>
 
             <div className="ds-section-block">
-              <h3 className="ds-h3">Clases grabadas</h3>
+              <div className="ds-library-head-row">
+                <h3 className="ds-h3">Clases grabadas</h3>
+                <div className="ds-library-sort-bar">
+                  <span>Ordenar por:</span>
+                  <button
+                    type="button"
+                    className="ds-library-sort-btn"
+                    onClick={() =>
+                      setRecordedSort((current) => (current === "recent" ? "old" : "recent"))
+                    }
+                  >
+                    {recordedSort === "recent" ? "Más recientes" : "Más antiguas"}
+                    <span aria-hidden>↕</span>
+                  </button>
+                </div>
+              </div>
               <div className="ds-library-grid">
                 <article className="ds-library-category-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={recordedYoga[0] ? getYouTubeThumbnail(recordedYoga[0].youtube_url) : "/fondoverde.jpg"}
+                    src="/pelele.jpeg"
                     alt="Yoga y meditación"
                     className="ds-library-thumb"
                     loading="lazy"
                   />
                   <div className="ds-library-category-content">
-                    <h4 className="ds-h3">Yoga & meditación</h4>
+                    <h4 className="ds-h3 ds-library-category-title" style={{ color: "#3f6343" }}>Yoga & meditación</h4>
                     <p className="ds-micro">{recordedYoga.length} clases</p>
                     <GhostButton onClick={() => setLibraryCategory("yoga")}>Ver</GhostButton>
                   </div>
@@ -1162,13 +1209,13 @@ export default function ClientePage() {
                 <article className="ds-library-category-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={recordedFuerza[0] ? getYouTubeThumbnail(recordedFuerza[0].youtube_url) : "/fondoverde.jpg"}
+                    src="/china.jpeg"
                     alt="Fuerza y movilidad"
                     className="ds-library-thumb"
                     loading="lazy"
                   />
                   <div className="ds-library-category-content">
-                    <h4 className="ds-h3">Fuerza & movilidad</h4>
+                    <h4 className="ds-h3 ds-library-category-title" style={{ color: "#3f6343" }}>Fuerza & movilidad</h4>
                     <p className="ds-micro">{recordedFuerza.length} clases</p>
                     <GhostButton onClick={() => setLibraryCategory("fuerza")}>Ver</GhostButton>
                   </div>
@@ -1176,11 +1223,11 @@ export default function ClientePage() {
               </div>
 
               {libraryCategory === "yoga" &&
-                recordedYoga.map((video) => (
+                displayedRecordedYoga.map((video) => (
                   <EditorialWorkoutCard
                     key={video.id}
                     title={video.title}
-                    meta="Clase grabada"
+                    meta=""
                     rightSlot={
                       <PrimaryButton
                         onClick={() => watchYoga(video.id, video.youtube_url)}
@@ -1192,11 +1239,11 @@ export default function ClientePage() {
                 ))}
 
               {libraryCategory === "fuerza" &&
-                recordedFuerza.map((video) => (
+                displayedRecordedFuerza.map((video) => (
                   <EditorialWorkoutCard
                     key={video.id}
                     title={video.title}
-                    meta="Clase grabada"
+                    meta=""
                     rightSlot={
                       <GhostButton
                         onClick={() =>
@@ -1323,6 +1370,7 @@ export default function ClientePage() {
       </div>
 
       <BottomNavigation items={tabs} value={tab} onChange={(value) => setTab(value as Tab)} />
-    </AppShell>
+      </AppShell>
+    </ProtectedRoute>
   );
 }

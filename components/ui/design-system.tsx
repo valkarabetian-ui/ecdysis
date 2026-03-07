@@ -213,14 +213,14 @@ export function EditorialWorkoutCard({
   rightSlot,
 }: {
   title: string;
-  meta: string;
+  meta?: string;
   rightSlot?: ReactNode;
 }) {
   return (
     <article className="ds-editorial-card ds-animate-card">
       <div>
         <h3 className="ds-h3">{title}</h3>
-        <p className="ds-micro">{meta}</p>
+        {meta ? <p className="ds-micro">{meta}</p> : null}
       </div>
       {rightSlot}
     </article>
