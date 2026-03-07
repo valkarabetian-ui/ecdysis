@@ -51,6 +51,7 @@ type LiveClass = {
 type PersonalizedYoga = { id: string; title: string; youtube_url: string };
 type CompletionRow = { completion_date: string };
 type YogaViewRow = { video_id: string; created_at: string };
+type RecordedViewRow = { video_id: string; created_at: string };
 type AttendanceRow = { live_class_id: string; created_at: string };
 
 const tabs: { id: Tab; label: string }[] = [
@@ -88,6 +89,13 @@ const dateKeyFromIso = (iso: string) => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
   return localDateKey(date);
+};
+
+const formatShortDate = (isoDate?: string) => {
+  if (!isoDate) return "-";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("es-AR");
 };
 
 const getYouTubeThumbnail = (url: string) => {
@@ -137,13 +145,14 @@ export default function ClientePage() {
   const [welcomeSeen, setWelcomeSeen] = useState(false);
   const [completionRows, setCompletionRows] = useState<CompletionRow[]>([]);
   const [yogaViewRows, setYogaViewRows] = useState<YogaViewRow[]>([]);
+  const [recordedViewRows, setRecordedViewRows] = useState<RecordedViewRow[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [clientLinkWarning, setClientLinkWarning] = useState("");
-  const [libraryCategory, setLibraryCategory] = useState<"yoga" | "fuerza">(
-    "yoga",
+  const [libraryCategory, setLibraryCategory] = useState<"yoga" | "fuerza" | null>(
+    null,
   );
   const [recordedSort, setRecordedSort] = useState<"recent" | "old">("recent");
   const [pullDistance, setPullDistance] = useState(0);
@@ -246,7 +255,7 @@ export default function ClientePage() {
       );
     }
 
-    const [welcomeQ, recordedQ, liveQ, completionsQ, yogaViewsQ, meetQ, welcomeViewsQ] = await Promise.all([
+    const [welcomeQ, recordedQ, liveQ, completionsQ, yogaViewsQ, recordedViewsQ, meetQ, welcomeViewsQ] = await Promise.all([
       supabase.from("welcome_videos").select("id, title, youtube_url").order("created_at", { ascending: true }),
       supabase
         .from("recorded_classes")
@@ -258,6 +267,7 @@ export default function ClientePage() {
         .order("class_datetime", { ascending: true }),
       supabase.from("training_completions").select("completion_date").eq("user_id", currentUserId),
       supabase.from("video_views").select("video_id, created_at").eq("user_id", currentUserId).eq("video_type", "yoga"),
+      supabase.from("video_views").select("video_id, created_at").eq("user_id", currentUserId).eq("video_type", "recorded"),
       supabase.from("class_attendance").select("live_class_id, created_at").eq("user_id", currentUserId),
       supabase.from("video_views").select("video_id").eq("user_id", currentUserId).eq("video_type", "welcome"),
     ]);
@@ -336,9 +346,11 @@ export default function ClientePage() {
 
     const completionData = (completionsQ.data as CompletionRow[]) ?? [];
     const yogaData = (yogaViewsQ.data as YogaViewRow[]) ?? [];
+    const recordedData = (recordedViewsQ.data as RecordedViewRow[]) ?? [];
     const attendanceData = (meetQ.data as AttendanceRow[]) ?? [];
     setCompletionRows(completionData);
     setYogaViewRows(yogaData);
+    setRecordedViewRows(recordedData);
     setAttendanceRows(attendanceData);
 
     const todayCompletionQ = await supabase
@@ -481,6 +493,11 @@ export default function ClientePage() {
     });
     return list;
   }, [recordedFuerza, recordedSort]);
+
+  const viewedRecordedIds = useMemo(
+    () => new Set(recordedViewRows.map((row) => row.video_id)),
+    [recordedViewRows],
+  );
 
   const nextLiveCountdown = (() => {
     if (!nextLive) return "";
@@ -745,6 +762,23 @@ export default function ClientePage() {
     if (userId) {
       await supabase.from("video_views").upsert({ user_id: userId, video_type: "yoga", video_id: videoId }, { onConflict: "user_id,video_type,video_id" });
       setYogaViewRows((current) =>
+        current.some((row) => row.video_id === videoId)
+          ? current
+          : [...current, { video_id: videoId, created_at: new Date().toISOString() }],
+      );
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const watchRecorded = async (videoId: string, url: string) => {
+    if (userId) {
+      await supabase
+        .from("video_views")
+        .upsert(
+          { user_id: userId, video_type: "recorded", video_id: videoId },
+          { onConflict: "user_id,video_type,video_id" },
+        );
+      setRecordedViewRows((current) =>
         current.some((row) => row.video_id === videoId)
           ? current
           : [...current, { video_id: videoId, created_at: new Date().toISOString() }],
@@ -1203,7 +1237,13 @@ export default function ClientePage() {
                   <div className="ds-library-category-content">
                     <h4 className="ds-h3 ds-library-category-title" style={{ color: "#3f6343" }}>Yoga & meditación</h4>
                     <p className="ds-micro">{recordedYoga.length} clases</p>
-                    <GhostButton onClick={() => setLibraryCategory("yoga")}>Ver</GhostButton>
+                    <GhostButton
+                      onClick={() =>
+                        setLibraryCategory((current) => (current === "yoga" ? null : "yoga"))
+                      }
+                    >
+                      {libraryCategory === "yoga" ? "Ocultar" : "Ver"}
+                    </GhostButton>
                   </div>
                 </article>
                 <article className="ds-library-category-card">
@@ -1217,44 +1257,54 @@ export default function ClientePage() {
                   <div className="ds-library-category-content">
                     <h4 className="ds-h3 ds-library-category-title" style={{ color: "#3f6343" }}>Fuerza & movilidad</h4>
                     <p className="ds-micro">{recordedFuerza.length} clases</p>
-                    <GhostButton onClick={() => setLibraryCategory("fuerza")}>Ver</GhostButton>
+                    <GhostButton
+                      onClick={() =>
+                        setLibraryCategory((current) => (current === "fuerza" ? null : "fuerza"))
+                      }
+                    >
+                      {libraryCategory === "fuerza" ? "Ocultar" : "Ver"}
+                    </GhostButton>
                   </div>
                 </article>
               </div>
 
-              {libraryCategory === "yoga" &&
-                displayedRecordedYoga.map((video) => (
-                  <EditorialWorkoutCard
-                    key={video.id}
-                    title={video.title}
-                    meta=""
-                    rightSlot={
-                      <PrimaryButton
-                        onClick={() => watchYoga(video.id, video.youtube_url)}
-                      >
-                        Ver
-                      </PrimaryButton>
-                    }
-                  />
-                ))}
+              {libraryCategory === "yoga" && (
+                <div className="ds-library-recorded-list">
+                  {displayedRecordedYoga.map((video) => (
+                    <EditorialWorkoutCard
+                      key={video.id}
+                      title={video.title}
+                      meta={`Subida: ${formatShortDate(video.created_at)} · ${viewedRecordedIds.has(video.id) ? "Visto" : "No visto"}`}
+                      rightSlot={
+                        <PrimaryButton
+                          onClick={() => watchRecorded(video.id, video.youtube_url)}
+                        >
+                          Ver
+                        </PrimaryButton>
+                      }
+                    />
+                  ))}
+                </div>
+              )}
 
-              {libraryCategory === "fuerza" &&
-                displayedRecordedFuerza.map((video) => (
-                  <EditorialWorkoutCard
-                    key={video.id}
-                    title={video.title}
-                    meta=""
-                    rightSlot={
-                      <GhostButton
-                        onClick={() =>
-                          window.open(video.youtube_url, "_blank", "noopener,noreferrer")
-                        }
-                      >
-                        Ver
-                      </GhostButton>
-                    }
-                  />
-                ))}
+              {libraryCategory === "fuerza" && (
+                <div className="ds-library-recorded-list">
+                  {displayedRecordedFuerza.map((video) => (
+                    <EditorialWorkoutCard
+                      key={video.id}
+                      title={video.title}
+                      meta={`Subida: ${formatShortDate(video.created_at)} · ${viewedRecordedIds.has(video.id) ? "Visto" : "No visto"}`}
+                      rightSlot={
+                        <GhostButton
+                          onClick={() => watchRecorded(video.id, video.youtube_url)}
+                        >
+                          Ver
+                        </GhostButton>
+                      }
+                    />
+                  ))}
+                </div>
+              )}
               {personalizedYoga.length > 0 && (
                 <>
                   <p className="ds-micro">Ejercicios personalizados</p>

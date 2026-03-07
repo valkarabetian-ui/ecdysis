@@ -413,11 +413,11 @@ body {
   border: 1px solid rgba(63, 99, 67, 0.22);
   background: rgba(63, 99, 67, 0.1);
   padding: 10px 12px;
-  color: #f7d232;
+  color: #ece8df;
 }
 
 .ds-month-footer .ds-micro {
-  color: #f7d232;
+  color: #ece8df;
 }
 
 .ds-micro {
@@ -1166,11 +1166,24 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-items: center;
+  text-align: center;
 }
 
-.ds-library-category-content .ds-h3,
+.ds-library-category-content .ds-h3 {
+  color: #3f6343 !important;
+}
+
 .ds-library-category-content .ds-micro {
   color: #ece8df !important;
+}
+
+.ds-library-recorded-list .ds-h3 {
+  color: #ece8df !important;
+}
+
+.ds-library-recorded-list .ds-micro {
+  color: rgba(236, 232, 223, 0.9) !important;
 }
 
 .ds-progress-shell {
