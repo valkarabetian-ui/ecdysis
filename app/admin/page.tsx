@@ -24,7 +24,15 @@ type Category = "fuerza" | "movilidad";
 type PlanType = "semanal" | "mensual";
 type Area = "fuerza" | "yoga";
 
-type Client = { id: string; name: string; email: string; created_at: string };
+type Client = {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  avatar_url?: string | null;
+  goals?: string | null;
+  attention_notes?: string | null;
+};
 type Exercise = { id: string; name: string; gif_url: string; category: Category };
 type Routine = {
   id: string;
@@ -54,7 +62,7 @@ type EncounterView = "recorded" | "live";
 const tabs: { id: Tab; label: string; shortLabel: string; icon: ReactNode }[] = [
   {
     id: "clientes",
-    label: "Gestión de clientes",
+    label: "Gestion",
     shortLabel: "Gestión",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -67,7 +75,7 @@ const tabs: { id: Tab; label: string; shortLabel: string; icon: ReactNode }[] = 
   },
   {
     id: "fuerza",
-    label: "Fuerza / Movilidad",
+    label: "Fuerza",
     shortLabel: "Fuerza",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -77,7 +85,7 @@ const tabs: { id: Tab; label: string; shortLabel: string; icon: ReactNode }[] = 
   },
   {
     id: "yoga",
-    label: "Yoga / Meditación",
+    label: "Yoga",
     shortLabel: "Yoga",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -89,7 +97,7 @@ const tabs: { id: Tab; label: string; shortLabel: string; icon: ReactNode }[] = 
   },
   {
     id: "bienvenida",
-    label: "Videos de Bienvenida",
+    label: "Bienvenida",
     shortLabel: "Bienvenida",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -113,6 +121,13 @@ const weekdayNames = [
 const dayNameFromISO = (isoDate: string) => {
   const parsed = new Date(`${isoDate}T12:00:00`);
   return weekdayNames[parsed.getDay()] ?? "lunes";
+};
+
+const adminSectionTitleByTab: Record<Tab, string> = {
+  clientes: "Gestión de clientes",
+  fuerza: "Fuerza y movilidad",
+  yoga: "Yoga y meditación",
+  bienvenida: "Videos de bienvenida",
 };
 
 const toDateTimeLocal = (isoDate: string) => {
@@ -160,7 +175,9 @@ export default function AdminPage() {
 
   const [newClient, setNewClient] = useState({ name: "", email: "" });
   const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category });
-  const [showExercises, setShowExercises] = useState(false);
+  const [fuerzaPanel, setFuerzaPanel] = useState<
+    "createExercise" | "listExercises" | "assignRoutine" | "createTemplate" | "uploadRecorded" | "createLive" | "manageEncounters" | null
+  >(null);
   const [exerciseSearch, setExerciseSearch] = useState("");
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<"todas" | Category>("todas");
   const [viewClient, setViewClient] = useState("");
@@ -217,6 +234,9 @@ export default function AdminPage() {
     Record<string, { title: string; url: string }>
   >({});
   const [toastMessage, setToastMessage] = useState("");
+  const [clientFichaDrafts, setClientFichaDrafts] = useState<
+    Record<string, { goals: string; attentionNotes: string }>
+  >({});
   const toastTimeoutRef = useRef<number | null>(null);
 
   const showSuccessToast = (message: string) => {
@@ -277,6 +297,19 @@ export default function AdminPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!viewClient) return;
+    const client = clients.find((item) => item.id === viewClient);
+    if (!client) return;
+    setClientFichaDrafts((current) => ({
+      ...current,
+      [viewClient]: current[viewClient] ?? {
+        goals: client.goals ?? "",
+        attentionNotes: client.attention_notes ?? "",
+      },
+    }));
+  }, [viewClient, clients]);
 
   const exerciseName = (id: string) => exercises.find((exercise) => exercise.id === id)?.name ?? "Ejercicio";
   const clientName = (id: string) => clients.find((client) => client.id === id)?.name ?? "Cliente";
@@ -370,6 +403,26 @@ export default function AdminPage() {
     }
     await loadAll();
     showSuccessToast("Cliente eliminado exitosamente.");
+    setSaving(false);
+  };
+
+  const saveClientFicha = async (clientId: string) => {
+    const draft = clientFichaDrafts[clientId] ?? { goals: "", attentionNotes: "" };
+    setSaving(true);
+    const { error: updateError } = await supabase
+      .from("clients")
+      .update({
+        goals: draft.goals.trim() || null,
+        attention_notes: draft.attentionNotes.trim() || null,
+      })
+      .eq("id", clientId);
+    if (updateError) {
+      setError(updateError.message);
+      setSaving(false);
+      return;
+    }
+    await loadAll();
+    showSuccessToast("Ficha del cliente actualizada.");
     setSaving(false);
   };
 
@@ -743,7 +796,7 @@ export default function AdminPage() {
     <ProtectedRoute allowedRole="admin">
       <div className="ds-admin-scroll-root">
         <AppShell title="" kicker="">
-        <h1 className="ds-h1 ds-admin-page-title">Práctica viva</h1>
+        <h1 className="ds-h1 ds-admin-page-title">{adminSectionTitleByTab[tab]}</h1>
         {toastMessage && (
           <div className="ds-toast" role="status" aria-live="polite">
             {toastMessage}
@@ -795,7 +848,12 @@ export default function AdminPage() {
                   <article key={client.id} className="ds-client-line">
                     <div className="ds-client-line-main">
                       <div className="ds-client-badge" aria-hidden>
-                        {client.name.charAt(0).toUpperCase()}
+                        {client.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={client.avatar_url} alt="" className="ds-client-avatar" />
+                        ) : (
+                          client.name.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div className="ds-client-line-copy">
                         <h3 className="ds-client-line-name">{client.name}</h3>
@@ -815,7 +873,7 @@ export default function AdminPage() {
                           <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
                           <circle cx="12" cy="12" r="2.8" />
                         </svg>
-                        <span>Ver rutina</span>
+                        <span>Ver</span>
                       </button>
                       <button
                         type="button"
@@ -859,6 +917,52 @@ export default function AdminPage() {
                       </button>
                     </div>
                     <div className="ds-routine-modal-body">
+                      <div className="ds-inline-panel ds-stack-md">
+                        <h4 className="ds-h3">Ficha del cliente</h4>
+                        <div className="ds-grid-2">
+                          <label className="ds-field">
+                            <span className="ds-field-label">Objetivos</span>
+                            <textarea
+                              className="ds-input"
+                              value={clientFichaDrafts[currentClient.id]?.goals ?? ""}
+                              onChange={(event) =>
+                                setClientFichaDrafts((current) => ({
+                                  ...current,
+                                  [currentClient.id]: {
+                                    goals: event.target.value,
+                                    attentionNotes: current[currentClient.id]?.attentionNotes ?? "",
+                                  },
+                                }))
+                              }
+                              rows={4}
+                              placeholder="Ej: Aumentar fuerza de brazos, mejorar postura..."
+                            />
+                          </label>
+                          <label className="ds-field">
+                            <span className="ds-field-label">Dolencias / puntos a cuidar</span>
+                            <textarea
+                              className="ds-input"
+                              value={clientFichaDrafts[currentClient.id]?.attentionNotes ?? ""}
+                              onChange={(event) =>
+                                setClientFichaDrafts((current) => ({
+                                  ...current,
+                                  [currentClient.id]: {
+                                    goals: current[currentClient.id]?.goals ?? "",
+                                    attentionNotes: event.target.value,
+                                  },
+                                }))
+                              }
+                              rows={4}
+                              placeholder="Ej: Molestia en hombro derecho, evitar impacto..."
+                            />
+                          </label>
+                        </div>
+                        <div className="ds-client-expanded-actions">
+                          <PrimaryButton onClick={() => saveClientFicha(currentClient.id)}>
+                            Guardar ficha
+                          </PrimaryButton>
+                        </div>
+                      </div>
                       <div className="ds-grid-3">
                         <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
                           <option value="semanal">Semanal</option>
@@ -964,15 +1068,58 @@ export default function AdminPage() {
 
       {tab === "fuerza" && (
         <>
-          <FloatingCard
-            title="Crear ejercicio"
-            headerRight={
-              <GhostButton onClick={() => setShowExercises((current) => !current)}>
-                {showExercises ? "Ocultar ejercicios creados" : "Ver ejercicios creados"}
+          <div className="ds-admin-fuerza-grid">
+            <FloatingCard title="Ejercicios" className="ds-admin-fuerza-card-compact">
+              <div className="ds-admin-group-actions">
+                <GhostButton onClick={() => setFuerzaPanel("createExercise")}>
+                  Crear ejercicio
+                </GhostButton>
+                <GhostButton onClick={() => setFuerzaPanel("listExercises")}>
+                  Ver ejercicios creados
+                </GhostButton>
+              </div>
+            </FloatingCard>
+
+            <FloatingCard title="Rutinas" className="ds-admin-fuerza-card-compact">
+              <div className="ds-admin-group-actions">
+                <GhostButton onClick={() => setFuerzaPanel("assignRoutine")}>
+                  Asignar rutina
+                </GhostButton>
+                <GhostButton onClick={() => setFuerzaPanel("createTemplate")}>
+                  Crear plantilla
+                </GhostButton>
+              </div>
+            </FloatingCard>
+          </div>
+
+          <FloatingCard title="Clases" className="ds-admin-fuerza-card-wide">
+            <div className="ds-admin-group-actions ds-admin-group-actions-classes">
+              <GhostButton onClick={() => setFuerzaPanel("uploadRecorded")}>
+                Subir clases grabadas
               </GhostButton>
-            }
-          >
-            <form onSubmit={createExercise} className="ds-create-exercise-form">
+              <GhostButton onClick={() => setFuerzaPanel("createLive")}>
+                Crear clase en vivo
+              </GhostButton>
+              <GhostButton onClick={() => setFuerzaPanel("manageEncounters")}>
+                Gestión de encuentros
+              </GhostButton>
+            </div>
+          </FloatingCard>
+
+          {fuerzaPanel === "createExercise" && (
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Crear ejercicio" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
+          <FloatingCard title="Crear ejercicio">
+            <form
+              onSubmit={async (event) => {
+                await createExercise(event);
+                setFuerzaPanel(null);
+              }}
+              className="ds-create-exercise-form"
+            >
               <div className="ds-create-exercise-row-top">
                 <TextField label="Nombre" value={newEx.name} onChange={(value) => setNewEx({ ...newEx, name: value })} />
                 <SelectField label="Categoría" value={newEx.category} onChange={(value) => setNewEx({ ...newEx, category: value as Category })}>
@@ -985,77 +1132,93 @@ export default function AdminPage() {
                 <PrimaryButton type="submit" className="ds-create-exercise-btn">Crear ejercicio</PrimaryButton>
               </div>
             </form>
-
-            <ExpandableSection open={showExercises}>
-              <>
-                <div className="ds-grid-2">
-                  <TextField
-                    label="Buscar por nombre"
-                    value={exerciseSearch}
-                    onChange={setExerciseSearch}
-                    placeholder="Ej: sentadilla"
-                  />
-                  <SelectField
-                    label="Filtrar por categoría"
-                    value={exerciseCategoryFilter}
-                    onChange={(value) => setExerciseCategoryFilter(value as "todas" | Category)}
-                  >
-                    <option value="todas">Todas</option>
-                    <option value="fuerza">Fuerza</option>
-                    <option value="movilidad">Movilidad</option>
-                  </SelectField>
-                </div>
-                {filteredExercises.length > 0 && (
-                  <div className="ds-clients-table-wrap ds-encounters-table-wrap">
-                    <table className="ds-clients-table ds-encounters-table">
-                      <thead>
-                        <tr>
-                          <th>Nombre</th>
-                          <th>Categoría</th>
-                          <th>Video</th>
-                          <th className="ds-encounter-actions-col" aria-label="Acciones" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredExercises.map((exercise) => (
-                          <tr key={exercise.id}>
-                            <td>{exercise.name}</td>
-                            <td>{exercise.category}</td>
-                            <td>
-                              <a className="ds-link-inline" href={exercise.gif_url} target="_blank" rel="noreferrer">
-                                Ver video
-                              </a>
-                            </td>
-                            <td>
-                              <div className="ds-client-row-actions">
-                                <button
-                                  type="button"
-                                  className="ds-encounter-action-btn ds-encounter-delete-btn"
-                                  onClick={() => deleteExercise(exercise.id)}
-                                  aria-label={`Borrar ejercicio ${exercise.name}`}
-                                >
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                    <path d="M3 6h18" />
-                                    <path d="M8 6V4h8v2" />
-                                    <path d="M19 6l-1 14H6L5 6" />
-                                    <path d="M10 11v6M14 11v6" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                {filteredExercises.length === 0 && (
-                  <p className="ds-description">No hay ejercicios con ese nombre.</p>
-                )}
-              </>
-            </ExpandableSection>
           </FloatingCard>
+            </div>
+          </div>
+          )}
 
+          {fuerzaPanel === "listExercises" && (
+            <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Ver ejercicios creados" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
+            <FloatingCard title="Ver ejercicios creados">
+              <div className="ds-grid-2">
+                <TextField
+                  label="Buscar por nombre"
+                  value={exerciseSearch}
+                  onChange={setExerciseSearch}
+                  placeholder="Ej: sentadilla"
+                />
+                <SelectField
+                  label="Filtrar por categoría"
+                  value={exerciseCategoryFilter}
+                  onChange={(value) => setExerciseCategoryFilter(value as "todas" | Category)}
+                >
+                  <option value="todas">Todas</option>
+                  <option value="fuerza">Fuerza</option>
+                  <option value="movilidad">Movilidad</option>
+                </SelectField>
+              </div>
+              {filteredExercises.length > 0 && (
+                <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                  <table className="ds-clients-table ds-encounters-table">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Video</th>
+                        <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredExercises.map((exercise) => (
+                        <tr key={exercise.id}>
+                          <td>{exercise.name}</td>
+                          <td>{exercise.category}</td>
+                          <td>
+                            <a className="ds-link-inline" href={exercise.gif_url} target="_blank" rel="noreferrer">
+                              Ver video
+                            </a>
+                          </td>
+                          <td>
+                            <div className="ds-client-row-actions">
+                              <button
+                                type="button"
+                                className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                onClick={() => deleteExercise(exercise.id)}
+                                aria-label={`Borrar ejercicio ${exercise.name}`}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                  <path d="M3 6h18" />
+                                  <path d="M8 6V4h8v2" />
+                                  <path d="M19 6l-1 14H6L5 6" />
+                                  <path d="M10 11v6M14 11v6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {filteredExercises.length === 0 && (
+                <p className="ds-description">No hay ejercicios con ese nombre.</p>
+              )}
+            </FloatingCard>
+              </div>
+            </div>
+          )}
+
+          {fuerzaPanel === "assignRoutine" && (
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Asignar rutina" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
           <FloatingCard title="Asignar rutina">
             <form id="assign-routine-form" onSubmit={addRoutineToDraft} className="ds-grid-3">
               <SelectField label="Cliente" value={assign.clientId} onChange={(value) => setAssign({ ...assign, clientId: value })}>
@@ -1095,14 +1258,35 @@ export default function AdminPage() {
             ))}
             <div className="ds-assign-bottom-actions">
               <PrimaryButton className="ds-assign-add-btn" type="submit" form="assign-routine-form">Agregar ejercicio</PrimaryButton>
-              <GhostButton className="ds-assign-routine-btn ds-assign-save-btn" onClick={saveRoutineDraft}>
+              <GhostButton
+                className="ds-assign-routine-btn ds-assign-save-btn"
+                onClick={async () => {
+                  await saveRoutineDraft();
+                  setFuerzaPanel(null);
+                }}
+              >
                 Asignar rutina
               </GhostButton>
             </div>
           </FloatingCard>
+            </div>
+          </div>
+          )}
 
+          {fuerzaPanel === "createTemplate" && (
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Crear plantilla" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
           <FloatingCard title="Crear plantilla">
-            <form onSubmit={saveTemplate} className="ds-grid-3">
+            <form
+              onSubmit={async (event) => {
+                await saveTemplate(event);
+                setFuerzaPanel(null);
+              }}
+              className="ds-grid-3"
+            >
               <SelectField label="Cliente" value={tpl.clientId} onChange={(value) => setTpl({ ...tpl, clientId: value })}>
                 <option value="">Seleccionar</option>
                 {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
@@ -1149,38 +1333,64 @@ export default function AdminPage() {
               </FloatingCard>
             ))}
           </FloatingCard>
+            </div>
+          </div>
+          )}
 
+          {fuerzaPanel === "uploadRecorded" && (
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Subir clases grabadas" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
           <FloatingCard title="Subir clases grabadas">
-            <form onSubmit={(event) => createRecorded(event, "fuerza")} className="ds-grid-3 ds-inline-upload-form">
+            <form
+              onSubmit={async (event) => {
+                await createRecorded(event, "fuerza");
+                setFuerzaPanel(null);
+              }}
+              className="ds-grid-3 ds-inline-upload-form"
+            >
               <TextField label="Nombre" value={recForm.title} onChange={(value) => setRecForm({ ...recForm, title: value })} />
               <TextField label="Link YouTube" value={recForm.url} onChange={(value) => setRecForm({ ...recForm, url: value })} />
               <PrimaryButton type="submit">Subir clase</PrimaryButton>
             </form>
           </FloatingCard>
+            </div>
+          </div>
+          )}
 
+          {fuerzaPanel === "createLive" && (
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Crear clase en vivo" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
           <FloatingCard title="Crear clase en vivo">
-            <form onSubmit={(event) => createLive(event, "fuerza")} className="ds-grid-4 ds-inline-upload-form">
+            <form
+              onSubmit={async (event) => {
+                await createLive(event, "fuerza");
+                setFuerzaPanel(null);
+              }}
+              className="ds-grid-4 ds-inline-upload-form"
+            >
               <TextField label="Nombre" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} />
               <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
               <TextField label="Link Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} />
               <PrimaryButton type="submit">Crear clase</PrimaryButton>
             </form>
           </FloatingCard>
+            </div>
+          </div>
+          )}
 
+          {fuerzaPanel === "manageEncounters" && (
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label="Gestión de encuentros" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
+                ×
+              </button>
           <FloatingCard title="Gestion de encuentros">
-            <GhostButton
-              onClick={() =>
-                setShowEncounters((current) => ({
-                  ...current,
-                  fuerza: !current.fuerza,
-                }))
-              }
-            >
-              {showEncounters.fuerza ? "Ocultar encuentros" : "Ver encuentros"}
-            </GhostButton>
-
-            <ExpandableSection open={showEncounters.fuerza}>
-              <>
                 <Tabs
                   items={[
                     { id: "recorded", label: "Clases grabadas" },
@@ -1255,7 +1465,10 @@ export default function AdminPage() {
                                         <button
                                           type="button"
                                           className="ds-encounter-action-btn ds-encounter-save-btn"
-                                          onClick={() => saveRecorded(item.id)}
+                                          onClick={async () => {
+                                            await saveRecorded(item.id);
+                                            setFuerzaPanel(null);
+                                          }}
                                           aria-label="Guardar cambios"
                                         >
                                           <span aria-hidden>✓</span>
@@ -1350,7 +1563,10 @@ export default function AdminPage() {
                                         <button
                                           type="button"
                                           className="ds-encounter-action-btn ds-encounter-save-btn"
-                                          onClick={() => saveLive(item.id)}
+                                          onClick={async () => {
+                                            await saveLive(item.id);
+                                            setFuerzaPanel(null);
+                                          }}
                                           aria-label="Guardar cambios"
                                         >
                                           <span aria-hidden>✓</span>
@@ -1384,9 +1600,10 @@ export default function AdminPage() {
                     )}
                   </>
                 )}
-              </>
-            </ExpandableSection>
           </FloatingCard>
+            </div>
+          </div>
+          )}
         </>
       )}
 

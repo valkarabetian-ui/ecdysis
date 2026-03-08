@@ -234,11 +234,11 @@ export default function LoginPage() {
           <h1 className="ds-login-title">
             {isPasswordResetFlow ? "Nueva contraseña" : "Práctica Viva"}
           </h1>
-          <p className="ds-login-subtitle ds-login-subtitle-line">
-            {isPasswordResetFlow
-              ? "Definí tu nuevo acceso"
-              : "Entrená tu evolución"}
-          </p>
+          {isPasswordResetFlow && (
+            <p className="ds-login-subtitle ds-login-subtitle-line">
+              Definí tu nuevo acceso
+            </p>
+          )}
         </header>
 
         <div className="ds-login-form-card">

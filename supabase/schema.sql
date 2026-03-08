@@ -11,6 +11,11 @@ create table if not exists public.clients (
   created_at timestamptz not null default now()
 );
 
+alter table public.clients
+  add column if not exists goals text,
+  add column if not exists attention_notes text,
+  add column if not exists avatar_url text;
+
 create table if not exists public.exercises (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -109,11 +114,18 @@ create table if not exists public.class_attendance (
 create table if not exists public.video_views (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  video_type text not null check (video_type in ('welcome', 'yoga')),
+  video_type text not null check (video_type in ('welcome', 'yoga', 'recorded')),
   video_id text not null,
   created_at timestamptz not null default now(),
   unique (user_id, video_type, video_id)
 );
+
+alter table public.video_views
+  drop constraint if exists video_views_video_type_check;
+
+alter table public.video_views
+  add constraint video_views_video_type_check
+  check (video_type in ('welcome', 'yoga', 'recorded'));
 
 alter table public.profiles
   add column if not exists full_name text,

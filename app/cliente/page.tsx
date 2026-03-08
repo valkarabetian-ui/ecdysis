@@ -1,7 +1,7 @@
 ﻿
 "use client";
 
-import { TouchEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, TouchEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { supabase } from "@/lib/supabase";
@@ -53,6 +53,7 @@ type CompletionRow = { completion_date: string };
 type YogaViewRow = { video_id: string; created_at: string };
 type RecordedViewRow = { video_id: string; created_at: string };
 type AttendanceRow = { live_class_id: string; created_at: string };
+type ClientFicha = { goals?: string | null; attention_notes?: string | null; avatar_url?: string | null };
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "inicio", label: "Inicio" },
@@ -150,6 +151,10 @@ export default function ClientePage() {
   const [newPassword, setNewPassword] = useState("");
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
+  const [clientRecordId, setClientRecordId] = useState("");
+  const [clientAvatarUrl, setClientAvatarUrl] = useState("");
+  const [clientGoals, setClientGoals] = useState("");
+  const [clientAttentionNotes, setClientAttentionNotes] = useState("");
   const [clientLinkWarning, setClientLinkWarning] = useState("");
   const [libraryCategory, setLibraryCategory] = useState<"yoga" | "fuerza" | null>(
     null,
@@ -160,6 +165,7 @@ export default function ClientePage() {
   const [isSwiping, setIsSwiping] = useState(false);
   const [showCompletionScreen, setShowCompletionScreen] = useState(false);
   const welcomeStripRef = useRef<HTMLDivElement | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const isPullingRef = useRef(false);
@@ -253,6 +259,23 @@ export default function ClientePage() {
       setClientLinkWarning(
         "Tu cuenta no esta vinculada a un cliente. Veras clases generales, pero no rutina personalizada.",
       );
+      setClientRecordId("");
+      setClientAvatarUrl("");
+      setClientGoals("");
+      setClientAttentionNotes("");
+    } else {
+      setClientRecordId(resolvedClientId);
+      const fichaQ = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", resolvedClientId)
+        .maybeSingle();
+      if (!fichaQ.error && fichaQ.data) {
+        const ficha = fichaQ.data as ClientFicha;
+        setClientAvatarUrl(ficha.avatar_url ?? "");
+        setClientGoals(ficha.goals ?? "");
+        setClientAttentionNotes(ficha.attention_notes ?? "");
+      }
     }
 
     const [welcomeQ, recordedQ, liveQ, completionsQ, yogaViewsQ, recordedViewsQ, meetQ, welcomeViewsQ] = await Promise.all([
@@ -785,6 +808,51 @@ export default function ClientePage() {
       );
     }
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+      reader.readAsDataURL(file);
+    });
+
+  const handleAvatarPick = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!clientRecordId) {
+      setProfileMsg("No se pudo asociar la imagen al cliente.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileMsg("La imagen debe pesar menos de 2MB.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const imageDataUrl = await fileToDataUrl(file);
+      const { error: updateError } = await supabase
+        .from("clients")
+        .update({ avatar_url: imageDataUrl })
+        .eq("id", clientRecordId);
+      if (updateError) {
+        setProfileMsg("No se pudo guardar la imagen.");
+        event.target.value = "";
+        return;
+      }
+      setClientAvatarUrl(imageDataUrl);
+      setProfileMsg("Imagen de perfil actualizada.");
+    } catch {
+      setProfileMsg("No se pudo procesar la imagen.");
+    }
+    event.target.value = "";
+  };
+
+  const openAvatarPicker = () => {
+    avatarInputRef.current?.click();
   };
 
   const changePassword = async () => {
@@ -1367,27 +1435,63 @@ export default function ClientePage() {
 
       {tab === "perfil" && (
         <FloatingCard title="Perfil" className="ds-profile-shell">
-          <div className="ds-profile-grid">
-            <article className="ds-profile-card">
-              <h3 className="ds-h3">Cuenta</h3>
-              <div className="ds-profile-row">
-                <p className="ds-micro">Correo</p>
-                <p className="ds-description">{email || "-"}</p>
+          <div className="ds-profile-stack">
+            <article className="ds-profile-card ds-profile-hero-card">
+              <div className="ds-profile-hero">
+                <div className="ds-profile-avatar-wrap">
+                  <input
+                    ref={avatarInputRef}
+                    id="profile-avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="ds-profile-avatar-input"
+                    hidden
+                    onChange={handleAvatarPick}
+                  />
+                  <button
+                    type="button"
+                    className="ds-profile-avatar-fab"
+                    onClick={openAvatarPicker}
+                    aria-label="Editar imagen de perfil"
+                  >
+                    +
+                  </button>
+                  <div className="ds-profile-avatar" aria-hidden>
+                    {clientAvatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={clientAvatarUrl} alt="" className="ds-profile-avatar-img" />
+                    ) : (
+                      <span className="ds-profile-avatar-placeholder" />
+                    )}
+                  </div>
+                </div>
+                <h3 className="ds-profile-name">{name}</h3>
+                <p className="ds-profile-role">Cliente</p>
               </div>
-              <div className="ds-profile-row">
-                <p className="ds-micro">Miembro desde</p>
-                <p className="ds-description">
-                  {createdAt ? new Date(createdAt).toLocaleDateString("es-AR") : "-"}
-                </p>
+              <div className="ds-profile-meta">
+                <div className="ds-profile-row">
+                  <p className="ds-micro">Correo</p>
+                  <p className="ds-description">{email || "-"}</p>
+                </div>
+                <div className="ds-profile-row">
+                  <p className="ds-micro">Miembro desde</p>
+                  <p className="ds-description">
+                    {createdAt ? new Date(createdAt).toLocaleDateString("es-AR") : "-"}
+                  </p>
+                </div>
               </div>
-            </article>
-            <article className="ds-profile-card ds-profile-security-card">
-              <h3 className="ds-h3">Seguridad</h3>
-              {!showPasswordChange ? (
-                <PrimaryButton onClick={() => setShowPasswordChange(true)} className="ds-profile-action">
-                  Cambiar contraseña
-                </PrimaryButton>
-              ) : (
+              <div className="ds-profile-menu">
+                <button
+                  type="button"
+                  className="ds-profile-menu-item"
+                  onClick={() => setShowPasswordChange((current) => !current)}
+                >
+                  <span className="ds-profile-menu-icon" aria-hidden>●</span>
+                  <span>Cambiar contraseña</span>
+                  <span className="ds-profile-menu-arrow" aria-hidden>›</span>
+                </button>
+              </div>
+              {showPasswordChange && (
                 <div className="ds-stack-md">
                   <TextField label="Nueva contraseña" value={newPassword} onChange={setNewPassword} type="password" />
                   <div className="ds-pill-row">
@@ -1404,7 +1508,20 @@ export default function ClientePage() {
                   </div>
                 </div>
               )}
-              <GhostButton onClick={logout} className="ds-profile-logout">Cerrar sesión</GhostButton>
+              <PrimaryButton onClick={logout} className="ds-profile-signout">
+                Cerrar sesión
+              </PrimaryButton>
+            </article>
+            <article className="ds-profile-card ds-profile-notes-card">
+              <h3 className="ds-h3">Mi ficha</h3>
+              <div className="ds-profile-row">
+                <p className="ds-micro">Objetivos</p>
+                <p className="ds-description">{clientGoals || "Sin objetivos cargados por el entrenador."}</p>
+              </div>
+              <div className="ds-profile-row">
+                <p className="ds-micro">Dolencias / puntos a cuidar</p>
+                <p className="ds-description">{clientAttentionNotes || "Sin observaciones por el momento."}</p>
+              </div>
             </article>
           </div>
           {profileMsg && <p className="ds-description ds-profile-msg">{profileMsg}</p>}
