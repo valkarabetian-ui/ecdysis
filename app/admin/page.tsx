@@ -29,6 +29,7 @@ type Client = {
   name: string;
   email: string;
   created_at: string;
+  auth_user_id?: string | null;
   avatar_url?: string | null;
   goals?: string | null;
   attention_notes?: string | null;
@@ -58,6 +59,13 @@ type RecordedClass = { id: string; area: Area; title: string; youtube_url: strin
 type LiveClass = { id: string; area: Area; title: string; class_datetime: string; meet_url: string; created_at?: string };
 type WelcomeVideo = { id: string; title: string; youtube_url: string; created_at?: string };
 type EncounterView = "recorded" | "live";
+type ClientActivitySummary = {
+  linked: boolean;
+  trainingsCompleted: number;
+  lastTrainingDate: string | null;
+  liveClassesAttended: number;
+  videosViewed: number;
+};
 
 const tabs: { id: Tab; label: string; shortLabel: string; icon: ReactNode }[] = [
   {
@@ -148,6 +156,21 @@ const formatShortDate = (isoDate?: string | null) => {
   });
 };
 
+const daysSinceText = (isoDate?: string | null) => {
+  if (!isoDate) return "-";
+  const parsed = new Date(isoDate.includes("T") ? isoDate : `${isoDate}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "-";
+
+  const today = new Date();
+  const todayAtMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
+  const diffMs = todayAtMidday.getTime() - parsed.getTime();
+  const diffDays = Math.max(0, Math.floor(diffMs / 86400000));
+
+  if (diffDays === 0) return "Hoy";
+  if (diffDays === 1) return "Hace 1 dia";
+  return `Hace ${diffDays} dias`;
+};
+
 const isYouTubeUrl = (value: string) => {
   try {
     const parsed = new URL(value);
@@ -172,6 +195,7 @@ export default function AdminPage() {
   const [recorded, setRecorded] = useState<RecordedClass[]>([]);
   const [live, setLive] = useState<LiveClass[]>([]);
   const [welcome, setWelcome] = useState<WelcomeVideo[]>([]);
+  const [clientActivityById, setClientActivityById] = useState<Record<string, ClientActivitySummary>>({});
 
   const [newClient, setNewClient] = useState({ name: "", email: "" });
   const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category });
@@ -253,7 +277,7 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
 
-    const [clientsQ, exercisesQ, routinesQ, templatesQ, templateItemsQ, recordedQ, liveQ, yogaQ, welcomeQ] = await Promise.all([
+    const [clientsQ, exercisesQ, routinesQ, templatesQ, templateItemsQ, recordedQ, liveQ, yogaQ, welcomeQ, activityRes] = await Promise.all([
       supabase.from("clients").select("*").order("created_at", { ascending: false }),
       supabase.from("exercises").select("*").order("created_at", { ascending: false }),
       supabase.from("routines").select("*").order("created_at", { ascending: false }),
@@ -263,6 +287,7 @@ export default function AdminPage() {
       supabase.from("live_classes").select("*").order("class_datetime", { ascending: true }),
       supabase.from("personalized_yoga").select("*").order("created_at", { ascending: false }),
       supabase.from("welcome_videos").select("*").order("created_at", { ascending: false }),
+      fetch("/api/admin/client-activity"),
     ]);
 
     const queryErrors = [clientsQ.error, exercisesQ.error, routinesQ.error, templatesQ.error, templateItemsQ.error, recordedQ.error, liveQ.error, yogaQ.error, welcomeQ.error].filter(Boolean);
@@ -284,6 +309,16 @@ export default function AdminPage() {
     setRecorded((recordedQ.data as RecordedClass[]) ?? []);
     setLive((liveQ.data as LiveClass[]) ?? []);
     setWelcome((welcomeQ.data as WelcomeVideo[]) ?? []);
+
+    if (activityRes.ok) {
+      const activityPayload = (await activityRes.json()) as {
+        activityByClientId?: Record<string, ClientActivitySummary>;
+      };
+      setClientActivityById(activityPayload.activityByClientId ?? {});
+    } else {
+      setClientActivityById({});
+    }
+
     setLoading(false);
   };
 
@@ -898,6 +933,13 @@ export default function AdminPage() {
               const currentClient = clients.find((item) => item.id === viewClient);
               if (!currentClient) return null;
               const clientRoutines = routinesForClient(currentClient.id);
+              const clientActivity = clientActivityById[currentClient.id] ?? {
+                linked: Boolean(currentClient.auth_user_id),
+                trainingsCompleted: 0,
+                lastTrainingDate: null,
+                liveClassesAttended: 0,
+                videosViewed: 0,
+              };
               return (
                 <div className="ds-modal-overlay" role="presentation" onClick={() => setViewClient("")}>
                   <div
@@ -917,6 +959,24 @@ export default function AdminPage() {
                       </button>
                     </div>
                     <div className="ds-routine-modal-body">
+                      <div className="ds-inline-panel ds-stack-md">
+                        <div>
+                          <h4 className="ds-h3">Actividad del cliente</h4>
+                          <p className="ds-micro">Resumen de uso y asistencia</p>
+                        </div>
+                        {clientActivity.linked ? (
+                          <div className="ds-stack-sm">
+                            <p className="ds-description">Entrenamientos realizados: {clientActivity.trainingsCompleted}</p>
+                            <p className="ds-description">Clases en vivo asistidas: {clientActivity.liveClassesAttended}</p>
+                            <p className="ds-description">Videos vistos: {clientActivity.videosViewed}</p>
+                            <p className="ds-description">Ultima actividad: {daysSinceText(clientActivity.lastTrainingDate)}</p>
+                          </div>
+                        ) : (
+                          <p className="ds-description">
+                            Este cliente todavia no tiene una cuenta vinculada, asi que no hay actividad para mostrar.
+                          </p>
+                        )}
+                      </div>
                       <div className="ds-inline-panel ds-stack-md">
                         <h4 className="ds-h3">Ficha del cliente</h4>
                         <div className="ds-grid-2">

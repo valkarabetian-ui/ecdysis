@@ -14,8 +14,6 @@ import {
   FloatingCard,
   GhostButton,
   PrimaryButton,
-  ProgressRing,
-  SecondaryButton,
   SkeletonCard,
   TextField,
 } from "@/components/ui/design-system";
@@ -54,6 +52,27 @@ type YogaViewRow = { video_id: string; created_at: string };
 type RecordedViewRow = { video_id: string; created_at: string };
 type AttendanceRow = { live_class_id: string; created_at: string };
 type ClientFicha = { goals?: string | null; attention_notes?: string | null; avatar_url?: string | null };
+
+const parseWorkoutPrescription = (value: string) => {
+  const normalized = value.trim();
+  const compactMatch = normalized.match(/^(\d+)\s*[xX]\s*(.+)$/);
+  if (compactMatch) {
+    return {
+      sets: Math.min(Math.max(Number(compactMatch[1]), 1), 6),
+      repsLabel: compactMatch[2].trim(),
+    };
+  }
+
+  return {
+    sets: 3,
+    repsLabel: normalized,
+  };
+};
+
+const workoutCueByCategory: Record<"fuerza" | "movilidad", string> = {
+  fuerza: "Mantene la espalda activa y controla el movimiento en cada repeticion.",
+  movilidad: "Respira profundo y busca amplitud sin forzar el rango de movimiento.",
+};
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "inicio", label: "Inicio" },
@@ -142,6 +161,8 @@ export default function ClientePage() {
   const [showTodayWorkout, setShowTodayWorkout] = useState(false);
   const [monthCursor, setMonthCursor] = useState(() => new Date());
   const [checked, setChecked] = useState<string[]>([]);
+  const [currentWorkoutIndex, setCurrentWorkoutIndex] = useState(0);
+  const [seriesChecksByExercise, setSeriesChecksByExercise] = useState<Record<string, boolean[]>>({});
   const [completedToday, setCompletedToday] = useState(false);
   const [welcomeSeen, setWelcomeSeen] = useState(false);
   const [completionRows, setCompletionRows] = useState<CompletionRow[]>([]);
@@ -560,6 +581,25 @@ export default function ClientePage() {
     return todays.find((item) => new Date(item.class_datetime) >= now) ?? todays[0];
   }, [liveClasses, todayDateISO]);
 
+  const safeCurrentWorkoutIndex = Math.min(
+    currentWorkoutIndex,
+    Math.max(todayPlan.length - 1, 0),
+  );
+  const currentWorkout = todayPlan[safeCurrentWorkoutIndex] ?? null;
+  const currentWorkoutKey = `${todayDateISO}-${safeCurrentWorkoutIndex}`;
+  const currentWorkoutMeta = currentWorkout
+    ? parseWorkoutPrescription(currentWorkout.repetitions)
+    : { sets: 3, repsLabel: "10" };
+  const currentSeriesChecks = seriesChecksByExercise[currentWorkoutKey] ??
+    Array.from({ length: currentWorkoutMeta.sets }, () => false);
+  const completedExerciseCount = checked.length;
+  const workoutProgressPercent = todayPlan.length > 0
+    ? Math.round((completedExerciseCount / todayPlan.length) * 100)
+    : 0;
+  const remainingWorkoutMinutes = todayPlan.length > 0
+    ? Math.max(0, (todayPlan.length - completedExerciseCount) * 8)
+    : 0;
+
   const progressMetrics = (() => {
     const now = new Date(nowMs);
     const year = now.getFullYear();
@@ -594,28 +634,8 @@ export default function ClientePage() {
       }
     });
 
-    const trainingTarget = Math.max(plannedDates.size, 1);
-    const trainingPercent = Math.min(
-      100,
-      Math.round((completedThisMonth / trainingTarget) * 100),
-    );
-
     const yogaViewedUnique = new Set(yogaViewRows.map((row) => row.video_id)).size;
-    const yogaTotalAvailable = Math.max(recordedYoga.length + personalizedYoga.length, 1);
-    const yogaPercent = Math.min(
-      100,
-      Math.round((yogaViewedUnique / yogaTotalAvailable) * 100),
-    );
-
-    const liveClassesThisMonth = liveClasses.filter((item) => {
-      const date = new Date(item.class_datetime);
-      return date.getFullYear() === year && date.getMonth() === month;
-    }).length;
     const attendedUnique = new Set(attendanceRows.map((row) => row.live_class_id)).size;
-    const meetPercent = Math.min(
-      100,
-      Math.round((attendedUnique / Math.max(liveClassesThisMonth, 1)) * 100),
-    );
 
     const monday = new Date(now);
     monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
@@ -662,6 +682,36 @@ export default function ClientePage() {
     }));
 
     const weeklyTotal = weeklyBars.reduce((acc, item) => acc + item.value, 0);
+    const createdDate = createdAt ? new Date(createdAt) : null;
+    const createdDateValid =
+      createdDate && !Number.isNaN(createdDate.getTime()) ? createdDate : null;
+    const planTotalDays = 90;
+    const elapsedPlanDays = createdDateValid
+      ? Math.min(
+          planTotalDays,
+          Math.max(
+            1,
+            Math.floor(
+              (new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0).getTime() -
+                new Date(
+                  createdDateValid.getFullYear(),
+                  createdDateValid.getMonth(),
+                  createdDateValid.getDate(),
+                  12,
+                  0,
+                  0,
+                ).getTime()) /
+                86400000,
+            ) + 1,
+          ),
+        )
+      : 0;
+    const planProgressPercent = createdDateValid
+      ? Math.min(100, Math.round((elapsedPlanDays / planTotalDays) * 100))
+      : 0;
+    const remainingPlanDays = createdDateValid
+      ? Math.max(0, planTotalDays - elapsedPlanDays)
+      : planTotalDays;
     const motivation =
       completedThisMonth === 0
         ? "Primer paso: cuando completes tu primer entrenamiento vas a ver tu racha."
@@ -670,12 +720,13 @@ export default function ClientePage() {
           : "Buen comienzo: sigue así para sostener tu práctica.";
 
     return {
-      trainingPercent,
-      yogaPercent,
-      meetPercent,
       completedThisMonth,
       yogaViewedUnique,
       attendedUnique,
+      elapsedPlanDays,
+      remainingPlanDays,
+      planTotalDays,
+      planProgressPercent,
       weeklyBars: weeklyBarsScaled,
       motivation,
     };
@@ -719,12 +770,6 @@ export default function ClientePage() {
     .toUpperCase();
   const todayCalendarLabels = Array.from(calendarLabels[todayDateISO] ?? []);
 
-  const toggleCheck = (idx: number) => {
-    const key = `${todayDateISO}-${idx}`;
-    setChecked((current) => (current.includes(key) ? current.filter((k) => k !== key) : [...current, key]));
-    triggerHaptic(8);
-  };
-
   const markDone = async () => {
     if (!userId || completedToday || checked.length < todayPlan.length) return;
     const { error: insertError } = await supabase.from("training_completions").upsert({ user_id: userId, completion_date: todayDateISO }, { onConflict: "user_id,completion_date" });
@@ -755,7 +800,72 @@ export default function ClientePage() {
 
   const startTodayWorkout = () => {
     triggerHaptic(10);
+    setCurrentWorkoutIndex(0);
+    setSeriesChecksByExercise(
+      Object.fromEntries(
+        todayPlan.map((item, index) => {
+          const key = `${todayDateISO}-${index}`;
+          const meta = parseWorkoutPrescription(item.repetitions);
+          return [key, Array.from({ length: meta.sets }, () => checked.includes(key))];
+        }),
+      ),
+    );
     setShowTodayWorkout(true);
+  };
+
+  const closeTodayWorkout = () => {
+    triggerHaptic(8);
+    setShowTodayWorkout(false);
+  };
+
+  const goToWorkoutExercise = (direction: "prev" | "next") => {
+    if (todayPlan.length === 0) return;
+    const delta = direction === "next" ? 1 : -1;
+    const nextIndex = Math.min(
+      todayPlan.length - 1,
+      Math.max(0, safeCurrentWorkoutIndex + delta),
+    );
+    setCurrentWorkoutIndex(nextIndex);
+    const nextKey = `${todayDateISO}-${nextIndex}`;
+    if (!seriesChecksByExercise[nextKey]) {
+      const meta = parseWorkoutPrescription(todayPlan[nextIndex].repetitions);
+      setSeriesChecksByExercise((current) => ({
+        ...current,
+        [nextKey]: Array.from({ length: meta.sets }, () => false),
+      }));
+    }
+    triggerHaptic(6);
+  };
+
+  const toggleWorkoutSerie = (exerciseIndex: number, seriesIndex: number) => {
+    const routine = todayPlan[exerciseIndex];
+    if (!routine) return;
+    const key = `${todayDateISO}-${exerciseIndex}`;
+    const meta = parseWorkoutPrescription(routine.repetitions);
+    setSeriesChecksByExercise((current) => {
+      const existing = current[key] ?? Array.from({ length: meta.sets }, () => false);
+      const nextChecks = existing.map((value, index) =>
+        index === seriesIndex ? !value : value,
+      );
+      const nextCompleted = nextChecks.every(Boolean);
+
+      setChecked((checkedCurrent) => {
+        const alreadyCompleted = checkedCurrent.includes(key);
+        if (nextCompleted && !alreadyCompleted) {
+          return [...checkedCurrent, key];
+        }
+        if (!nextCompleted && alreadyCompleted) {
+          return checkedCurrent.filter((item) => item !== key);
+        }
+        return checkedCurrent;
+      });
+
+      return {
+        ...current,
+        [key]: nextChecks,
+      };
+    });
+    triggerHaptic(8);
   };
 
   const markWelcomeSeen = async () => {
@@ -913,7 +1023,7 @@ export default function ClientePage() {
 
   return (
     <ProtectedRoute allowedRole="cliente">
-      <AppShell kicker="" title="Práctica viva">
+      <AppShell kicker="" title={showTodayWorkout && tab === "inicio" ? "" : "Práctica viva"}>
       <div
         className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}
         style={{
@@ -935,6 +1045,181 @@ export default function ClientePage() {
         }}
       >
       {tab === "inicio" && (
+        showTodayWorkout ? (
+          <section className="ds-workout-screen ds-animate-card">
+            <div className="ds-workout-topbar">
+              <button
+                type="button"
+                className="ds-workout-icon-btn"
+                onClick={closeTodayWorkout}
+                aria-label="Volver al inicio"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <div className="ds-workout-headline">
+                <h2 className="ds-h1">Entrenamiento de hoy</h2>
+                <p className="ds-subtitle">
+                  {todayFocus.length > 0 ? todayFocus.join(" / ") : "Rutina personalizada"}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="ds-workout-icon-btn"
+                aria-label="Opciones del entrenamiento"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <circle cx="5" cy="12" r="1.8" />
+                  <circle cx="12" cy="12" r="1.8" />
+                  <circle cx="19" cy="12" r="1.8" />
+                </svg>
+              </button>
+            </div>
+
+            <article className="ds-workout-progress-card">
+              <div className="ds-workout-progress-track" aria-hidden>
+                <div
+                  className="ds-workout-progress-fill"
+                  style={{ width: `${workoutProgressPercent}%` }}
+                />
+              </div>
+              <div className="ds-workout-progress-meta">
+                <p className="ds-workout-progress-copy">
+                  {completedExerciseCount} / {todayPlan.length} ejercicios
+                </p>
+                <p className="ds-workout-progress-copy">
+                  {remainingWorkoutMinutes} min restantes
+                </p>
+              </div>
+            </article>
+
+            {currentWorkout ? (
+              <>
+                <article className="ds-workout-card">
+                  <div className="ds-workout-card-head">
+                    <div className="ds-workout-card-title-wrap">
+                      <span className="ds-workout-step-badge">{safeCurrentWorkoutIndex + 1}</span>
+                      <div>
+                        <h3 className="ds-workout-card-title">
+                          {exerciseById[currentWorkout.exercise_id]?.name ?? "Ejercicio"}
+                        </h3>
+                        <p className="ds-workout-card-subtitle">
+                          {currentWorkoutMeta.sets} x {currentWorkoutMeta.repsLabel}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="ds-workout-category-pill">
+                      {currentWorkout.category === "fuerza" ? "Fuerza" : "Movilidad"}
+                    </span>
+                  </div>
+
+                  <div className="ds-workout-media-card">
+                    {(() => {
+                      const exerciseUrl = exerciseById[currentWorkout.exercise_id]?.gifUrl ?? "";
+                      const exercisePreviewUrl = getYouTubeThumbnail(exerciseUrl) || exerciseUrl;
+                      return exercisePreviewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={exercisePreviewUrl}
+                          alt={`Demostracion de ${exerciseById[currentWorkout.exercise_id]?.name ?? "ejercicio"}`}
+                          className="ds-workout-media"
+                        />
+                      ) : (
+                        <div className="ds-workout-media-placeholder">
+                          <span>Video no disponible</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="ds-workout-cue">
+                    <span className="ds-workout-cue-icon" aria-hidden>
+                      !
+                    </span>
+                    <p>{workoutCueByCategory[currentWorkout.category]}</p>
+                  </div>
+
+                  <div className="ds-workout-series-list">
+                    {currentSeriesChecks.map((isDone, seriesIndex) => (
+                      <button
+                        key={`${currentWorkoutKey}-serie-${seriesIndex + 1}`}
+                        type="button"
+                        className={`ds-workout-series-item ${isDone ? "is-done" : ""}`}
+                        onClick={() => toggleWorkoutSerie(safeCurrentWorkoutIndex, seriesIndex)}
+                        aria-pressed={isDone}
+                      >
+                        <span className="ds-workout-series-check" aria-hidden>
+                          {isDone ? "✓" : ""}
+                        </span>
+                        <span className="ds-workout-series-label">Serie {seriesIndex + 1}</span>
+                        <span className="ds-workout-series-reps">{currentWorkoutMeta.repsLabel}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="ds-workout-rest-copy">
+                    Descansa 60 seg entre series
+                  </p>
+
+                  <div className="ds-workout-nav">
+                    <button
+                      type="button"
+                      className="ds-workout-nav-btn is-secondary"
+                      onClick={() => goToWorkoutExercise("prev")}
+                      disabled={safeCurrentWorkoutIndex === 0}
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      type="button"
+                      className="ds-workout-nav-btn is-primary"
+                      onClick={() => goToWorkoutExercise("next")}
+                      disabled={safeCurrentWorkoutIndex === todayPlan.length - 1}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </article>
+
+                <article className="ds-workout-bottom-status">
+                  <div className="ds-workout-bottom-progress">
+                    <div className="ds-workout-bottom-meter" aria-hidden>
+                      <div
+                        className="ds-workout-bottom-meter-fill"
+                        style={{
+                          width: `${todayPlan.length > 0 ? ((safeCurrentWorkoutIndex + 1) / todayPlan.length) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="ds-workout-bottom-copy">
+                      <p>Ejercicio {safeCurrentWorkoutIndex + 1} de {todayPlan.length}</p>
+                      <p>{remainingWorkoutMinutes} min</p>
+                    </div>
+                  </div>
+                  {completedToday ? (
+                    <button type="button" className="ds-workout-complete-btn" disabled>
+                      Entrenamiento ya completado hoy
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="ds-workout-complete-btn"
+                      onClick={markDone}
+                      disabled={checked.length < todayPlan.length || todayPlan.length === 0}
+                    >
+                      Marcar entrenamiento como completado
+                    </button>
+                  )}
+                </article>
+              </>
+            ) : (
+              <article className="ds-workout-card">
+                <p className="ds-description">No hay rutina asignada para hoy.</p>
+              </article>
+            )}
+          </section>
+        ) : (
           <FloatingCard
             title={`Hola, ${name}`}
           >
@@ -1154,89 +1439,24 @@ export default function ClientePage() {
             </ExpandableSection>
             </div>
 
-          {(!completedToday || showTodayWorkout) && (
+          {!completedToday && (
           <div className="ds-section-block">
             <h3 className="ds-h3">Entrenamiento completo de hoy</h3>
-            {!showTodayWorkout ? (
-              <>
-                <p className="ds-description">
-                  {todayPlan.length > 0
-                    ? "Estas listo para entrenar hoy?"
-                    : "Hoy no tenes rutina asignada."}
-                </p>
-                <PrimaryButton
-                  onClick={startTodayWorkout}
-                  disabled={todayPlan.length === 0}
-                >
-                 ¡Empecemos!
-                </PrimaryButton>
-              </>
-            ) : (
-              <>
-                <div className="ds-inline-panel">
-                  <h4 className="ds-h3">{todayFocus[0] ?? "Entrenamiento del dia"}</h4>
-                  <p className="ds-description">Rutina completa asignada para hoy.</p>
-                  <GhostButton onClick={() => setShowTodayWorkout(false)}>
-                    Volver
-                  </GhostButton>
-                </div>
-
-                {todayPlan.map((item, idx) => {
-                  const key = `${todayDateISO}-${idx}`;
-                  const exerciseUrl = exerciseById[item.exercise_id]?.gifUrl ?? "";
-                  const exercisePreviewUrl = getYouTubeThumbnail(exerciseUrl) || exerciseUrl;
-                  return (
-                    <EditorialWorkoutCard
-                      key={key}
-                      title={`${exerciseById[item.exercise_id]?.name ?? "Ejercicio"} - ${item.repetitions} reps`}
-                      meta={item.category}
-                      rightSlot={
-                        <div className="ds-pill-row">
-                          {exercisePreviewUrl && (
-                            <>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={exercisePreviewUrl}
-                                alt={`Video ${exerciseById[item.exercise_id]?.name ?? "ejercicio"}`}
-                                className="ds-gif-thumb"
-                                loading="lazy"
-                              />
-                            </>
-                          )}
-                          {!completedToday && (
-                            <button
-                              type="button"
-                              className={`ds-check ${checked.includes(key) ? "is-checked" : ""}`}
-                              aria-pressed={checked.includes(key)}
-                              aria-label={`Marcar ${exerciseById[item.exercise_id]?.name ?? "ejercicio"} como completado`}
-                              onClick={() => toggleCheck(idx)}
-                            >
-                              {checked.includes(key) ? "âœ“" : ""}
-                            </button>
-                          )}
-                        </div>
-                      }
-                    />
-                  );
-                })}
-
-                {todayPlan.length === 0 && (
-                  <p className="ds-description">No hay rutina asignada para hoy.</p>
-                )}
-                {completedToday ? (
-                  <SecondaryButton disabled>
-                    Entrenamiento ya completado hoy
-                  </SecondaryButton>
-                ) : (
-                  <SecondaryButton onClick={markDone}>
-                    Marcar entrenamiento como completado
-                  </SecondaryButton>
-                )}
-              </>
-            )}
+            <p className="ds-description">
+              {todayPlan.length > 0
+                ? "Estas listo para entrenar hoy?"
+                : "Hoy no tenes rutina asignada."}
+            </p>
+            <PrimaryButton
+              onClick={startTodayWorkout}
+              disabled={todayPlan.length === 0}
+            >
+              ¡Empecemos!
+            </PrimaryButton>
           </div>
           )}
         </FloatingCard>
+        )
       )}
 
       {tab === "biblioteca" && (
@@ -1387,25 +1607,57 @@ export default function ClientePage() {
 
       {tab === "progreso" && (
         <FloatingCard title="Tu progreso" className="ds-progress-shell">
-          <p className="ds-description">Sigue construyendo tu práctica</p>
+          <p className="ds-description">Cada práctica suma</p>
 
           <div className="ds-progress-grid">
             <article className="ds-progress-metric-card">
-              <h3 className="ds-h3">Entrenamientos</h3>
-              <ProgressRing value={progressMetrics.trainingPercent} label={`${progressMetrics.trainingPercent}%`} />
-              <p className="ds-description">{progressMetrics.completedThisMonth} completado(s) este mes</p>
+              <h3 className="ds-h3">Entrenamientos realizados</h3>
+              <p className="ds-h1">{progressMetrics.completedThisMonth}</p>
+              <p className="ds-description">Total completados este mes</p>
             </article>
             <article className="ds-progress-metric-card">
-              <h3 className="ds-h3">Yoga visto</h3>
-              <ProgressRing value={progressMetrics.yogaPercent} label={`${progressMetrics.yogaPercent}%`} />
-              <p className="ds-description">{progressMetrics.yogaViewedUnique} clase(s) vistas</p>
+              <h3 className="ds-h3">Clases de yoga vistas</h3>
+              <p className="ds-h1">{progressMetrics.yogaViewedUnique}</p>
+              <p className="ds-description">Total de clases vistas</p>
             </article>
             <article className="ds-progress-metric-card">
-              <h3 className="ds-h3">Encuentros</h3>
-              <ProgressRing value={progressMetrics.meetPercent} label={`${progressMetrics.meetPercent}%`} />
-              <p className="ds-description">{progressMetrics.attendedUnique} asistencia(s)</p>
+              <h3 className="ds-h3">Encuentros en vivo</h3>
+              <p className="ds-h1">{progressMetrics.attendedUnique}</p>
+              <p className="ds-description">Total de asistencias</p>
             </article>
           </div>
+
+          <article className="ds-progress-plan-card">
+            <div className="ds-progress-plan-head">
+              <div>
+                <h3 className="ds-h3">Avance del plan de 90 dias</h3>
+              </div>
+              <p className="ds-progress-plan-percent">
+                {progressMetrics.planProgressPercent}%
+              </p>
+            </div>
+            <div
+              className="ds-progress-plan-bar"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressMetrics.planProgressPercent}
+              aria-label="Avance del plan de 90 dias"
+            >
+              <div
+                className="ds-progress-plan-fill"
+                style={{ width: `${progressMetrics.planProgressPercent}%` }}
+              />
+            </div>
+            <div className="ds-progress-plan-meta">
+              <p className="ds-description">
+                Dia {progressMetrics.elapsedPlanDays} de {progressMetrics.planTotalDays}
+              </p>
+              <p className="ds-description">
+                {progressMetrics.remainingPlanDays} dia(s) restantes
+              </p>
+            </div>
+          </article>
 
           <div className="ds-section-block">
             <h3 className="ds-h3">Actividad semanal</h3>
@@ -1536,7 +1788,9 @@ export default function ClientePage() {
       )}
       </div>
 
-      <BottomNavigation items={tabs} value={tab} onChange={(value) => setTab(value as Tab)} />
+      {!(tab === "inicio" && showTodayWorkout) && (
+        <BottomNavigation items={tabs} value={tab} onChange={(value) => setTab(value as Tab)} />
+      )}
       </AppShell>
     </ProtectedRoute>
   );
