@@ -96,9 +96,13 @@ create table if not exists public.live_classes (
   area text not null check (area in ('fuerza', 'yoga')),
   title text not null,
   class_datetime timestamptz not null,
+  cover_image_url text,
   meet_url text not null,
   created_at timestamptz not null default now()
 );
+
+alter table public.live_classes
+  add column if not exists cover_image_url text;
 
 create table if not exists public.personalized_yoga (
   id uuid primary key default gen_random_uuid(),

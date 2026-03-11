@@ -57,7 +57,7 @@ type Template = {
   items: TemplateItem[];
 };
 type RecordedClass = { id: string; area: Area; title: string; youtube_url: string; created_at?: string };
-type LiveClass = { id: string; area: Area; title: string; class_datetime: string; meet_url: string; created_at?: string };
+type LiveClass = { id: string; area: Area; title: string; class_datetime: string; meet_url: string; cover_image_url?: string | null; created_at?: string };
 type WelcomeVideo = { id: string; title: string; youtube_url: string; created_at?: string };
 type EncounterView = "recorded" | "live";
 type ClientActivitySummary = {
@@ -239,7 +239,7 @@ export default function AdminPage() {
   const [tplDraft, setTplDraft] = useState<{ exercise_id: string; repetitions: string; series: number }[]>([]);
 
   const [recForm, setRecForm] = useState({ title: "", url: "" });
-  const [liveForm, setLiveForm] = useState({ title: "", date: "", url: "" });
+  const [liveForm, setLiveForm] = useState({ title: "", date: "", url: "", coverImageUrl: "" });
   const [yogaForm, setYogaForm] = useState({ clientId: "", title: "", url: "" });
   const [welForm, setWelForm] = useState({ title: "", url: "" });
   const [showEncounters, setShowEncounters] = useState<{ fuerza: boolean; yoga: boolean }>({
@@ -648,12 +648,36 @@ export default function AdminPage() {
       title: liveForm.title,
       class_datetime: new Date(liveForm.date).toISOString(),
       meet_url: liveForm.url,
+      cover_image_url: liveForm.coverImageUrl || null,
     });
     if (insertError) setError(insertError.message);
-    setLiveForm({ title: "", date: "", url: "" });
+    setLiveForm({ title: "", date: "", url: "", coverImageUrl: "" });
     await loadAll();
     if (!insertError) showSuccessToast("Clase en vivo creada exitosamente.");
     setSaving(false);
+  };
+
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+      reader.readAsDataURL(file);
+    });
+
+  const handleLiveCoverPick = async (file?: File | null) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError("La portada debe pesar menos de 2MB.");
+      return;
+    }
+
+    try {
+      const imageDataUrl = await fileToDataUrl(file);
+      setLiveForm((current) => ({ ...current, coverImageUrl: imageDataUrl }));
+    } catch {
+      setError("No se pudo procesar la portada.");
+    }
   };
 
   const startEditRecorded = (item: RecordedClass) => {
@@ -1456,8 +1480,23 @@ export default function AdminPage() {
               <TextField label="Nombre" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} />
               <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
               <TextField label="Link Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} />
+              <label className="ds-field">
+                <span className="ds-field-label">Foto de portada</span>
+                <input
+                  className="ds-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => void handleLiveCoverPick(event.target.files?.[0])}
+                />
+              </label>
               <PrimaryButton type="submit">Crear clase</PrimaryButton>
             </form>
+            {liveForm.coverImageUrl && (
+              <div className="ds-inline-panel">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={liveForm.coverImageUrl} alt="Vista previa de portada" className="ds-live-cover-preview" />
+              </div>
+            )}
           </FloatingCard>
             </div>
           </div>
@@ -1701,8 +1740,23 @@ export default function AdminPage() {
               <TextField label="Nombre" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} />
               <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
               <TextField label="Link Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} />
+              <label className="ds-field">
+                <span className="ds-field-label">Foto de portada</span>
+                <input
+                  className="ds-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => void handleLiveCoverPick(event.target.files?.[0])}
+                />
+              </label>
               <PrimaryButton type="submit">Crear clase</PrimaryButton>
             </form>
+            {liveForm.coverImageUrl && (
+              <div className="ds-inline-panel">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={liveForm.coverImageUrl} alt="Vista previa de portada" className="ds-live-cover-preview" />
+              </div>
+            )}
           </FloatingCard>
 
           <FloatingCard title="Subir ejercicios personalizados">

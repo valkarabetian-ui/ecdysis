@@ -46,6 +46,7 @@ type LiveClass = {
   title: string;
   class_datetime: string;
   meet_url: string;
+  cover_image_url?: string | null;
 };
 type PersonalizedYoga = { id: string; title: string; youtube_url: string };
 type CompletionRow = { completion_date: string };
@@ -338,7 +339,7 @@ export default function ClientePage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("live_classes")
-        .select("id, area, title, class_datetime, meet_url")
+        .select("id, area, title, class_datetime, meet_url, cover_image_url")
         .order("class_datetime", { ascending: true }),
       supabase.from("training_completions").select("completion_date").eq("user_id", currentUserId),
       supabase.from("video_views").select("video_id, created_at").eq("user_id", currentUserId).eq("video_type", "yoga"),
@@ -848,11 +849,25 @@ export default function ClientePage() {
 
   const goToWorkoutExercise = (direction: "prev" | "next") => {
     if (todayPlan.length === 0) return;
-    const delta = direction === "next" ? 1 : -1;
-    const nextIndex = Math.min(
-      todayPlan.length - 1,
-      Math.max(0, safeCurrentWorkoutIndex + delta),
-    );
+    let nextIndex = safeCurrentWorkoutIndex;
+
+    if (direction === "prev") {
+      nextIndex = Math.max(0, safeCurrentWorkoutIndex - 1);
+    } else if (safeCurrentWorkoutIndex < todayPlan.length - 1) {
+      nextIndex = safeCurrentWorkoutIndex + 1;
+    } else {
+      const firstPendingIndex = todayPlan.findIndex((item, index) => {
+        const key = `${todayDateISO}-${index}`;
+        const meta = resolveWorkoutPrescription(item.series, item.repetitions);
+        const checks =
+          seriesChecksByExercise[key] ??
+          Array.from({ length: meta.sets }, () => checked.includes(key));
+        return !checks.every(Boolean);
+      });
+
+      nextIndex = firstPendingIndex === -1 ? todayPlan.length - 1 : firstPendingIndex;
+    }
+
     setCurrentWorkoutIndex(nextIndex);
     const nextKey = `${todayDateISO}-${nextIndex}`;
     if (!seriesChecksByExercise[nextKey]) {
@@ -1168,10 +1183,6 @@ export default function ClientePage() {
                     ))}
                   </div>
 
-                  <p className="ds-workout-rest-copy">
-                    Descansa 60 seg entre series
-                  </p>
-
                   <div className="ds-workout-nav">
                     <button
                       type="button"
@@ -1289,7 +1300,7 @@ export default function ClientePage() {
                     {label === "Fuerza" ? (
                       <button
                         type="button"
-                        className="ds-inline-action"
+                        className="ds-inline-action ds-inline-action-fuerza"
                         onClick={startTodayWorkout}
                       >
                         {label}
@@ -1453,7 +1464,7 @@ export default function ClientePage() {
             <h3 className="ds-h3">Entrenamiento completo de hoy</h3>
             <p className="ds-description">
               {todayPlan.length > 0
-                ? "Estas listo para entrenar hoy?"
+                ? "¿Estás listo?"
                 : "Hoy no tenes rutina asignada."}
             </p>
             <PrimaryButton
@@ -1478,9 +1489,10 @@ export default function ClientePage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
-                        nextLive.area === "yoga"
+                        nextLive.cover_image_url ||
+                        (nextLive.area === "yoga"
                           ? (recordedYoga[0] ? getYouTubeThumbnail(recordedYoga[0].youtube_url) : "/fondoverde.jpg")
-                          : (recordedFuerza[0] ? getYouTubeThumbnail(recordedFuerza[0].youtube_url) : "/fondoverde.jpg")
+                          : (recordedFuerza[0] ? getYouTubeThumbnail(recordedFuerza[0].youtube_url) : "/fondoverde.jpg"))
                       }
                       alt={`Vista previa de ${nextLive.title}`}
                       className="ds-library-thumb"
@@ -1488,7 +1500,7 @@ export default function ClientePage() {
                     />
                   </div>
                   <div className="ds-library-live-content">
-                    <h4 className="ds-h3 ds-library-live-video-title" style={{ color: "#ece8df" }}>{nextLive.title}</h4>
+                    <h4 className="ds-h3 ds-library-live-video-title">{nextLive.title}</h4>
                     <p className="ds-micro">
                       {new Date(nextLive.class_datetime).toLocaleDateString("es-AR")},{" "}
                       {new Date(nextLive.class_datetime).toLocaleTimeString("es-AR", {
@@ -1747,7 +1759,6 @@ export default function ClientePage() {
                   className="ds-profile-menu-item"
                   onClick={() => setShowPasswordChange((current) => !current)}
                 >
-                  <span className="ds-profile-menu-icon" aria-hidden>●</span>
                   <span>Cambiar contraseña</span>
                   <span className="ds-profile-menu-arrow" aria-hidden>›</span>
                 </button>
