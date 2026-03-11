@@ -27,6 +27,7 @@ type Routine = {
   day: string;
   routine_date?: string | null;
   category: "fuerza" | "movilidad";
+  series?: number | null;
   repetitions: string;
   exercise_id: string;
 };
@@ -53,8 +54,15 @@ type RecordedViewRow = { video_id: string; created_at: string };
 type AttendanceRow = { live_class_id: string; created_at: string };
 type ClientFicha = { goals?: string | null; attention_notes?: string | null; avatar_url?: string | null };
 
-const parseWorkoutPrescription = (value: string) => {
-  const normalized = value.trim();
+const resolveWorkoutPrescription = (series: number | null | undefined, repetitions: string) => {
+  if (typeof series === "number" && Number.isFinite(series) && series > 0) {
+    return {
+      sets: series,
+      repsLabel: repetitions.trim(),
+    };
+  }
+
+  const normalized = repetitions.trim();
   const compactMatch = normalized.match(/^(\d+)\s*[xX]\s*(.+)$/);
   if (compactMatch) {
     return {
@@ -64,14 +72,9 @@ const parseWorkoutPrescription = (value: string) => {
   }
 
   return {
-    sets: 3,
+    sets: 1,
     repsLabel: normalized,
   };
-};
-
-const workoutCueByCategory: Record<"fuerza" | "movilidad", string> = {
-  fuerza: "Mantene la espalda activa y controla el movimiento en cada repeticion.",
-  movilidad: "Respira profundo y busca amplitud sin forzar el rango de movimiento.",
 };
 
 const tabs: { id: Tab; label: string }[] = [
@@ -130,6 +133,34 @@ const getYouTubeThumbnail = (url: string) => {
       return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : "";
     }
     return "";
+  } catch {
+    return "";
+  }
+};
+
+const getYouTubeEmbedUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    let id = "";
+
+    if (parsed.hostname.includes("youtu.be")) {
+      id = parsed.pathname.replace("/", "");
+    } else if (parsed.hostname.includes("youtube.com")) {
+      id = parsed.searchParams.get("v") ?? "";
+    }
+
+    if (!id) return "";
+
+    const embed = new URL(`https://www.youtube.com/embed/${id}`);
+    embed.searchParams.set("autoplay", "1");
+    embed.searchParams.set("mute", "1");
+    embed.searchParams.set("loop", "1");
+    embed.searchParams.set("playlist", id);
+    embed.searchParams.set("controls", "1");
+    embed.searchParams.set("modestbranding", "1");
+    embed.searchParams.set("rel", "0");
+    embed.searchParams.set("playsinline", "1");
+    return embed.toString();
   } catch {
     return "";
   }
@@ -333,7 +364,7 @@ export default function ClientePage() {
       const [routinesQ, personalizedQ] = await Promise.all([
         supabase
           .from("routines")
-          .select("id, day, routine_date, category, repetitions, exercise_id")
+          .select("id, day, routine_date, category, series, repetitions, exercise_id")
           .eq("client_id", resolvedClientId),
         supabase
           .from("personalized_yoga")
@@ -588,16 +619,13 @@ export default function ClientePage() {
   const currentWorkout = todayPlan[safeCurrentWorkoutIndex] ?? null;
   const currentWorkoutKey = `${todayDateISO}-${safeCurrentWorkoutIndex}`;
   const currentWorkoutMeta = currentWorkout
-    ? parseWorkoutPrescription(currentWorkout.repetitions)
-    : { sets: 3, repsLabel: "10" };
+    ? resolveWorkoutPrescription(currentWorkout.series, currentWorkout.repetitions)
+    : { sets: 1, repsLabel: "10" };
   const currentSeriesChecks = seriesChecksByExercise[currentWorkoutKey] ??
     Array.from({ length: currentWorkoutMeta.sets }, () => false);
   const completedExerciseCount = checked.length;
   const workoutProgressPercent = todayPlan.length > 0
     ? Math.round((completedExerciseCount / todayPlan.length) * 100)
-    : 0;
-  const remainingWorkoutMinutes = todayPlan.length > 0
-    ? Math.max(0, (todayPlan.length - completedExerciseCount) * 8)
     : 0;
 
   const progressMetrics = (() => {
@@ -805,7 +833,7 @@ export default function ClientePage() {
       Object.fromEntries(
         todayPlan.map((item, index) => {
           const key = `${todayDateISO}-${index}`;
-          const meta = parseWorkoutPrescription(item.repetitions);
+          const meta = resolveWorkoutPrescription(item.series, item.repetitions);
           return [key, Array.from({ length: meta.sets }, () => checked.includes(key))];
         }),
       ),
@@ -828,7 +856,7 @@ export default function ClientePage() {
     setCurrentWorkoutIndex(nextIndex);
     const nextKey = `${todayDateISO}-${nextIndex}`;
     if (!seriesChecksByExercise[nextKey]) {
-      const meta = parseWorkoutPrescription(todayPlan[nextIndex].repetitions);
+      const meta = resolveWorkoutPrescription(todayPlan[nextIndex].series, todayPlan[nextIndex].repetitions);
       setSeriesChecksByExercise((current) => ({
         ...current,
         [nextKey]: Array.from({ length: meta.sets }, () => false),
@@ -841,7 +869,7 @@ export default function ClientePage() {
     const routine = todayPlan[exerciseIndex];
     if (!routine) return;
     const key = `${todayDateISO}-${exerciseIndex}`;
-    const meta = parseWorkoutPrescription(routine.repetitions);
+    const meta = resolveWorkoutPrescription(routine.series, routine.repetitions);
     setSeriesChecksByExercise((current) => {
       const existing = current[key] ?? Array.from({ length: meta.sets }, () => false);
       const nextChecks = existing.map((value, index) =>
@@ -1064,17 +1092,7 @@ export default function ClientePage() {
                   {todayFocus.length > 0 ? todayFocus.join(" / ") : "Rutina personalizada"}
                 </p>
               </div>
-              <button
-                type="button"
-                className="ds-workout-icon-btn"
-                aria-label="Opciones del entrenamiento"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <circle cx="5" cy="12" r="1.8" />
-                  <circle cx="12" cy="12" r="1.8" />
-                  <circle cx="19" cy="12" r="1.8" />
-                </svg>
-              </button>
+              <div aria-hidden />
             </div>
 
             <article className="ds-workout-progress-card">
@@ -1087,9 +1105,6 @@ export default function ClientePage() {
               <div className="ds-workout-progress-meta">
                 <p className="ds-workout-progress-copy">
                   {completedExerciseCount} / {todayPlan.length} ejercicios
-                </p>
-                <p className="ds-workout-progress-copy">
-                  {remainingWorkoutMinutes} min restantes
                 </p>
               </div>
             </article>
@@ -1117,13 +1132,15 @@ export default function ClientePage() {
                   <div className="ds-workout-media-card">
                     {(() => {
                       const exerciseUrl = exerciseById[currentWorkout.exercise_id]?.gifUrl ?? "";
-                      const exercisePreviewUrl = getYouTubeThumbnail(exerciseUrl) || exerciseUrl;
-                      return exercisePreviewUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={exercisePreviewUrl}
-                          alt={`Demostracion de ${exerciseById[currentWorkout.exercise_id]?.name ?? "ejercicio"}`}
+                      const embedUrl = getYouTubeEmbedUrl(exerciseUrl);
+                      return embedUrl ? (
+                        <iframe
+                          src={embedUrl}
+                          title={`Demostracion de ${exerciseById[currentWorkout.exercise_id]?.name ?? "ejercicio"}`}
                           className="ds-workout-media"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allowFullScreen
                         />
                       ) : (
                         <div className="ds-workout-media-placeholder">
@@ -1131,13 +1148,6 @@ export default function ClientePage() {
                         </div>
                       );
                     })()}
-                  </div>
-
-                  <div className="ds-workout-cue">
-                    <span className="ds-workout-cue-icon" aria-hidden>
-                      !
-                    </span>
-                    <p>{workoutCueByCategory[currentWorkout.category]}</p>
                   </div>
 
                   <div className="ds-workout-series-list">
@@ -1194,7 +1204,6 @@ export default function ClientePage() {
                     </div>
                     <div className="ds-workout-bottom-copy">
                       <p>Ejercicio {safeCurrentWorkoutIndex + 1} de {todayPlan.length}</p>
-                      <p>{remainingWorkoutMinutes} min</p>
                     </div>
                   </div>
                   {completedToday ? (

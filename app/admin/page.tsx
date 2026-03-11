@@ -43,9 +43,10 @@ type Routine = {
   category: Category;
   exercise_id: string;
   repetitions: string;
+  series: number;
   plan_type: PlanType;
 };
-type TemplateItem = { id: string; template_id: string; exercise_id: string; repetitions: string };
+type TemplateItem = { id: string; template_id: string; exercise_id: string; repetitions: string; series: number };
 type Template = {
   id: string;
   client_id: string;
@@ -219,6 +220,7 @@ export default function AdminPage() {
     category: "fuerza" as Category,
     routineDate: defaultRoutineDate,
     exerciseId: "",
+    series: "",
     reps: "10",
     planType: "semanal" as PlanType,
   });
@@ -231,9 +233,10 @@ export default function AdminPage() {
     planType: "semanal" as PlanType,
     startDate: "",
     exerciseId: "",
+    series: "",
     reps: "10",
   });
-  const [tplDraft, setTplDraft] = useState<{ exercise_id: string; repetitions: string }[]>([]);
+  const [tplDraft, setTplDraft] = useState<{ exercise_id: string; repetitions: string; series: number }[]>([]);
 
   const [recForm, setRecForm] = useState({ title: "", url: "" });
   const [liveForm, setLiveForm] = useState({ title: "", date: "", url: "" });
@@ -523,7 +526,8 @@ export default function AdminPage() {
 
   const addRoutineToDraft = (event: FormEvent) => {
     event.preventDefault();
-    if (!assign.clientId || !assign.exerciseId) return;
+    const parsedSeries = Number(assign.series);
+    if (!assign.clientId || !assign.exerciseId || !Number.isInteger(parsedSeries) || parsedSeries <= 0) return;
     setAssignDraft((current) => [
       ...current,
       {
@@ -532,10 +536,12 @@ export default function AdminPage() {
         day: dayNameFromISO(assign.routineDate),
         routine_date: assign.routineDate,
         exercise_id: assign.exerciseId,
+        series: parsedSeries,
         repetitions: assign.reps,
         plan_type: assign.planType,
       },
     ]);
+    setAssign((current) => ({ ...current, exerciseId: "", series: "", reps: "10" }));
   };
 
   const saveRoutineDraft = async () => {
@@ -555,8 +561,9 @@ export default function AdminPage() {
   };
 
   const addTemplateItemToDraft = () => {
-    if (!tpl.exerciseId) return;
-    setTplDraft((current) => [...current, { exercise_id: tpl.exerciseId, repetitions: tpl.reps }]);
+    const parsedSeries = Number(tpl.series);
+    if (!tpl.exerciseId || !Number.isInteger(parsedSeries) || parsedSeries <= 0) return;
+    setTplDraft((current) => [...current, { exercise_id: tpl.exerciseId, repetitions: tpl.reps, series: parsedSeries }]);
   };
 
   const saveTemplate = async (event: FormEvent) => {
@@ -586,6 +593,7 @@ export default function AdminPage() {
       template_id: templateResult.data.id,
       exercise_id: item.exercise_id,
       repetitions: item.repetitions,
+      series: item.series,
     }));
 
     const itemsResult = await supabase.from("routine_template_items").insert(rows);
@@ -596,7 +604,7 @@ export default function AdminPage() {
     }
 
     setTplDraft([]);
-    setTpl((current) => ({ ...current, name: "", startDate: "", exerciseId: "", reps: "10" }));
+    setTpl((current) => ({ ...current, name: "", startDate: "", exerciseId: "", series: "", reps: "10" }));
     await loadAll();
     showSuccessToast("Plantilla creada exitosamente.");
     setSaving(false);
@@ -604,12 +612,12 @@ export default function AdminPage() {
 
   const updateTemplateItem = async (
     itemId: string,
-    field: "exercise_id" | "repetitions",
+    field: "exercise_id" | "repetitions" | "series",
     value: string,
   ) => {
     const { error: updateError } = await supabase
       .from("routine_template_items")
-      .update({ [field]: value })
+      .update({ [field]: field === "series" ? Number(value) : value })
       .eq("id", itemId);
     if (updateError) setError(updateError.message);
     await loadAll();
@@ -1089,7 +1097,7 @@ export default function AdminPage() {
                       {clientRoutines.map((routine) => (
                         <EditorialWorkoutCard
                           key={routine.id}
-                          title={`${exerciseName(routine.exercise_id)} - ${routine.repetitions} reps`}
+                          title={`${exerciseName(routine.exercise_id)} - ${routine.series} series x ${routine.repetitions} reps`}
                           meta={`${routine.routine_date ?? routine.day} / ${routine.category}`}
                           rightSlot={
                             <div className="ds-pill-row">
@@ -1279,22 +1287,23 @@ export default function AdminPage() {
               <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label="Cerrar">
                 ×
               </button>
-          <FloatingCard title="Asignar rutina">
-            <form id="assign-routine-form" onSubmit={addRoutineToDraft} className="ds-grid-3">
-              <SelectField label="Cliente" value={assign.clientId} onChange={(value) => setAssign({ ...assign, clientId: value })}>
-                <option value="">Seleccionar</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </SelectField>
-              <SelectField label="Categoria" value={assign.category} onChange={(value) => setAssign({ ...assign, category: value as Category, exerciseId: "" })}>
-                <option value="fuerza">Fuerza</option>
-                <option value="movilidad">Movilidad</option>
-              </SelectField>
-              <SelectField label="Plan" value={assign.planType} onChange={(value) => setAssign({ ...assign, planType: value as PlanType })}>
-                <option value="semanal">Semanal</option>
-                <option value="mensual">Mensual</option>
-              </SelectField>
+              <div className="ds-routine-modal-body">
+                <FloatingCard title="Asignar rutina">
+                  <form id="assign-routine-form" onSubmit={addRoutineToDraft} className="ds-grid-3">
+                    <SelectField label="Cliente" value={assign.clientId} onChange={(value) => setAssign({ ...assign, clientId: value })}>
+                      <option value="">Seleccionar</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>{client.name}</option>
+                      ))}
+                    </SelectField>
+                    <SelectField label="Categoria" value={assign.category} onChange={(value) => setAssign({ ...assign, category: value as Category, exerciseId: "" })}>
+                      <option value="fuerza">Fuerza</option>
+                      <option value="movilidad">Movilidad</option>
+                    </SelectField>
+                    <SelectField label="Plan" value={assign.planType} onChange={(value) => setAssign({ ...assign, planType: value as PlanType })}>
+                      <option value="semanal">Semanal</option>
+                      <option value="mensual">Mensual</option>
+                    </SelectField>
               <TextField label="Fecha" value={assign.routineDate} onChange={(value) => setAssign({ ...assign, routineDate: value })} type="date" />
               <SelectField label="Ejercicio" value={assign.exerciseId} onChange={(value) => setAssign({ ...assign, exerciseId: value })}>
                 <option value="">Seleccionar</option>
@@ -1303,32 +1312,40 @@ export default function AdminPage() {
                 ))}
               </SelectField>
               <TextField
+                label="Series"
+                value={assign.series}
+                onChange={(value) => setAssign({ ...assign, series: value })}
+                placeholder="Ej: 4"
+                type="number"
+              />
+              <TextField
                 label="Repeticiones"
                 value={assign.reps}
                 onChange={(value) => setAssign({ ...assign, reps: value })}
-                placeholder="Ej: 3x12"
+                placeholder="Ej: 10"
               />
             </form>
-            {assignDraft.map((item, index) => (
-              <EditorialWorkoutCard
-                key={`${item.exercise_id}-${index}`}
-                title={`${exerciseName(item.exercise_id)} - ${item.repetitions} reps`}
-                meta={`${item.routine_date ?? item.day} / ${item.plan_type}`}
-              />
-            ))}
-            <div className="ds-assign-bottom-actions">
-              <PrimaryButton className="ds-assign-add-btn" type="submit" form="assign-routine-form">Agregar ejercicio</PrimaryButton>
-              <GhostButton
-                className="ds-assign-routine-btn ds-assign-save-btn"
-                onClick={async () => {
-                  await saveRoutineDraft();
-                  setFuerzaPanel(null);
-                }}
-              >
-                Asignar rutina
-              </GhostButton>
-            </div>
-          </FloatingCard>
+                  {assignDraft.map((item, index) => (
+                    <EditorialWorkoutCard
+                      key={`${item.exercise_id}-${index}`}
+                      title={`${exerciseName(item.exercise_id)} - ${item.series} series x ${item.repetitions} reps`}
+                      meta={`${item.routine_date ?? item.day} / ${item.plan_type}`}
+                    />
+                  ))}
+                  <div className="ds-assign-bottom-actions">
+                    <PrimaryButton className="ds-assign-add-btn" type="submit" form="assign-routine-form">Agregar ejercicio</PrimaryButton>
+                    <GhostButton
+                      className="ds-assign-routine-btn ds-assign-save-btn"
+                      onClick={async () => {
+                        await saveRoutineDraft();
+                        setFuerzaPanel(null);
+                      }}
+                    >
+                      Asignar rutina
+                    </GhostButton>
+                  </div>
+                </FloatingCard>
+              </div>
             </div>
           </div>
           )}
@@ -1367,6 +1384,7 @@ export default function AdminPage() {
                   <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
                 ))}
               </SelectField>
+              <TextField label="Series" value={tpl.series} onChange={(value) => setTpl({ ...tpl, series: value })} type="number" placeholder="Ej: 4" />
               <TextField label="Repeticiones" value={tpl.reps} onChange={(value) => setTpl({ ...tpl, reps: value })} />
               <div className="ds-template-actions">
                 <GhostButton onClick={addTemplateItemToDraft}>
@@ -1381,12 +1399,13 @@ export default function AdminPage() {
             {templates.map((template) => (
               <FloatingCard key={template.id} title={`${template.name} - ${clientName(template.client_id)}`} description={template.plan_type}>
                 {template.items.map((item) => (
-                  <div key={item.id} className="ds-grid-2">
+                  <div key={item.id} className="ds-grid-3">
                     <SelectField label="Ejercicio" value={item.exercise_id} onChange={(value) => updateTemplateItem(item.id, "exercise_id", value)}>
                       {exercises.filter((exercise) => exercise.category === template.category).map((exercise) => (
                         <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
                       ))}
                     </SelectField>
+                    <TextField label="Series" value={item.series} onChange={(value) => updateTemplateItem(item.id, "series", value)} type="number" />
                     <TextField label="Repeticiones" value={item.repetitions} onChange={(value) => updateTemplateItem(item.id, "repetitions", value)} />
                   </div>
                 ))}

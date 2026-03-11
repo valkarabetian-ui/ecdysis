@@ -31,6 +31,7 @@ create table if not exists public.routines (
   routine_date date,
   day text not null check (day in ('lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo')),
   exercise_id uuid not null references public.exercises(id) on delete cascade,
+  series integer not null default 1 check (series > 0),
   repetitions text not null,
   plan_type text not null check (plan_type in ('semanal', 'mensual')),
   created_at timestamptz not null default now()
@@ -44,6 +45,15 @@ alter table public.routines
 
 alter table public.routines
   alter column repetitions type text using repetitions::text;
+
+alter table public.routines
+  add column if not exists series integer not null default 1;
+
+alter table public.routines
+  drop constraint if exists routines_series_check;
+
+alter table public.routines
+  add constraint routines_series_check check (series > 0);
 
 create table if not exists public.routine_templates (
   id uuid primary key default gen_random_uuid(),
@@ -59,9 +69,19 @@ create table if not exists public.routine_template_items (
   id uuid primary key default gen_random_uuid(),
   template_id uuid not null references public.routine_templates(id) on delete cascade,
   exercise_id uuid not null references public.exercises(id) on delete cascade,
+  series integer not null default 1 check (series > 0),
   repetitions integer not null check (repetitions > 0),
   created_at timestamptz not null default now()
 );
+
+alter table public.routine_template_items
+  add column if not exists series integer not null default 1;
+
+alter table public.routine_template_items
+  drop constraint if exists routine_template_items_series_check;
+
+alter table public.routine_template_items
+  add constraint routine_template_items_series_check check (series > 0);
 
 create table if not exists public.recorded_classes (
   id uuid primary key default gen_random_uuid(),
