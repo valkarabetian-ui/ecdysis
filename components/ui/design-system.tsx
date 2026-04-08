@@ -62,7 +62,7 @@ export function FloatingCard({
   headerRight,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   className?: string;
   headerRight?: ReactNode;
@@ -70,10 +70,12 @@ export function FloatingCard({
 }) {
   return (
     <section className={`ds-card ds-animate-card ${className ?? ""}`}>
-      <div className="ds-card-head">
-        <h2 className="ds-h2">{title}</h2>
-        {headerRight ? <div className="ds-card-head-right">{headerRight}</div> : null}
-      </div>
+      {(title || headerRight) ? (
+        <div className="ds-card-head">
+          {title ? <h2 className="ds-h2">{title}</h2> : <div aria-hidden />}
+          {headerRight ? <div className="ds-card-head-right">{headerRight}</div> : null}
+        </div>
+      ) : null}
       {description && <p className="ds-description">{description}</p>}
       <div className="ds-stack-md">{children}</div>
     </section>
@@ -340,10 +342,48 @@ export function BottomNavigation({
   value,
   onChange,
 }: {
-  items: { id: string; label: string }[];
+  items: { id: string; label: string; icon?: ReactNode }[];
   value: string;
   onChange: (id: string) => void;
 }) {
+  const resolveIcon = (item: { id: string; label: string; icon?: ReactNode }) => {
+    if (item.icon) return item.icon;
+
+    switch (item.id) {
+      case "inicio":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 10.5 12 3l9 7.5" />
+            <path d="M5.5 9.5V20h13V9.5" />
+          </svg>
+        );
+      case "biblioteca":
+        return (
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 6.8c0-1.04 1.13-1.69 2.03-1.16l7.08 4.2c.88.52.88 1.8 0 2.32l-7.08 4.2A1.35 1.35 0 0 1 8 15.24z" />
+          </svg>
+        );
+      case "progreso":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19h16" />
+            <path d="M7 16V10" />
+            <path d="M12 16V6" />
+            <path d="M17 16v-4" />
+          </svg>
+        );
+      case "perfil":
+        return (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="3.5" />
+            <path d="M5 20a7 7 0 0 1 14 0" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <nav className="ds-bottom-nav">
       {items.map((item) => (
@@ -351,8 +391,11 @@ export function BottomNavigation({
           key={item.id}
           onClick={() => onChange(item.id)}
           className={`ds-bottom-item ${value === item.id ? "is-active" : ""}`}
+          aria-label={item.label}
+          aria-current={value === item.id ? "page" : undefined}
         >
-          {item.label}
+          <span className="ds-bottom-item-icon" aria-hidden>{resolveIcon(item)}</span>
+          <span className="ds-bottom-item-label">{item.label}</span>
         </button>
       ))}
     </nav>

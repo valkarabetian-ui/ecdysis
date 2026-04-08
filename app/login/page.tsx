@@ -48,6 +48,14 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const emailLooksValid = /\S+@\S+\.\S+/.test(email.trim());
+  const canRequestReset = email.trim().length > 0 && emailLooksValid;
+  const passwordStrengthReady = resetPassword.length >= 6;
+  const passwordsMatch =
+    resetPasswordConfirm.length > 0 && resetPassword === resetPasswordConfirm;
+
+  const feedbackTone = error ? "error" : message ? "success" : "info";
+  const feedbackText = error || message;
   useEffect(() => {
     let cancelled = false;
 
@@ -124,15 +132,26 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setError("");
     setMessage("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Completá tu email y tu contraseña para ingresar.");
+      return;
+    }
+
+    if (!emailLooksValid) {
+      setError("Revisá el formato del email antes de continuar.");
+      return;
+    }
+
     setLoading(true);
 
     const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
     if (loginError) {
-      setError("Credenciales incorrectas.");
+      setError("No pudimos iniciar sesión con esos datos. Revisá el email, la contraseña o pedí un enlace de recuperación.");
       setLoading(false);
       return;
     }
@@ -143,7 +162,7 @@ export default function LoginPage() {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      setError("No se pudo obtener la sesion.");
+      setError("Ingresaste, pero no pudimos recuperar tu sesión completa. Intentá de nuevo.");
       setLoading(false);
       return;
     }
@@ -155,7 +174,7 @@ export default function LoginPage() {
       .single();
 
     if (profileError || !profile) {
-      setError("Perfil no encontrado.");
+      setError("Tu cuenta existe, pero falta terminar la configuración del perfil. Contactá a administración.");
       setLoading(false);
       return;
     }
@@ -171,21 +190,26 @@ export default function LoginPage() {
     setError("");
     setMessage("");
 
-    if (!email) {
-      setError("Ingresa tu mail para recuperar la contraseña.");
+    if (!email.trim()) {
+      setError("Primero escribí tu email para enviarte el acceso de recuperación.");
       return;
     }
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+    if (!emailLooksValid) {
+      setError("Ese email no parece válido. Revisalo y volvé a intentar.");
+      return;
+    }
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/login`,
     });
 
     if (resetError) {
-      setError("No se pudo enviar el correo de recuperacion.");
+      setError("No pudimos enviar el correo de recuperación en este momento. Intentá de nuevo en unos minutos.");
       return;
     }
 
-    setMessage("Te enviamos un mail para restablecer la contraseña.");
+    setMessage("Te enviamos un correo con instrucciones para restablecer tu contraseña. Revisá también spam o promociones.");
   };
 
   const handleSetNewPassword = async () => {
@@ -193,17 +217,17 @@ export default function LoginPage() {
     setMessage("");
 
     if (!resetPassword || !resetPasswordConfirm) {
-      setError("Completa ambos campos de contraseña.");
+      setError("Completá ambos campos para guardar tu nueva contraseña.");
       return;
     }
 
     if (resetPassword.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+      setError("Tu nueva contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
     if (resetPassword !== resetPasswordConfirm) {
-      setError("Las contraseñas no coinciden.");
+      setError("Las contraseñas no coinciden todavía. Revisá ambas y volvé a intentar.");
       return;
     }
 
@@ -213,7 +237,7 @@ export default function LoginPage() {
     });
 
     if (updateError) {
-      setError("No se pudo actualizar la contraseña. Intenta de nuevo.");
+      setError("No pudimos actualizar la contraseña. Probá de nuevo desde este enlace o solicitá uno nuevo.");
       setLoading(false);
       return;
     }
@@ -224,21 +248,30 @@ export default function LoginPage() {
     setResetPasswordConfirm("");
     setShowResetPassword(false);
     setLoading(false);
-    setMessage("Contraseña actualizada. Ahora inicia sesión.");
+    setMessage("Contraseña actualizada con éxito. Ahora podés iniciar sesión con tu nuevo acceso.");
   };
 
   return (
     <main className="ds-login-page">
+      <div className="ds-login-ambient ds-login-ambient-left" aria-hidden="true" />
+      <div className="ds-login-ambient ds-login-ambient-right" aria-hidden="true" />
       <section className="ds-login-shell">
         <header className="ds-login-head">
           <h1 className="ds-login-title">
-            {isPasswordResetFlow ? "Nueva contraseña" : "Práctica Viva"}
+            {isPasswordResetFlow ? (
+              "Nueva contraseña"
+            ) : (
+              <>
+                <span className="ds-login-title-soft">Práctica</span>
+                <span className="ds-login-title-strong">Viva</span>
+              </>
+            )}
           </h1>
-          {isPasswordResetFlow && (
-            <p className="ds-login-subtitle ds-login-subtitle-line">
-              Definí tu nuevo acceso
-            </p>
-          )}
+          <p className="ds-login-subtitle">
+            {isPasswordResetFlow
+              ? "Definí tu nuevo acceso para volver a entrar con una contraseña segura."
+              : "Accedé a tu espacio de práctica."}
+          </p>
         </header>
 
         <div className="ds-login-form-card">
@@ -253,6 +286,13 @@ export default function LoginPage() {
                   placeholder="hola@practicaviva.com"
                   className="ds-login-input"
                 />
+                <span className="ds-login-field-note">
+                  {email.trim().length === 0
+                    ? "Usá el correo con el que administrás o seguís tus rutinas."
+                    : !emailLooksValid
+                      ? "Sumá un formato válido, por ejemplo nombre@dominio.com."
+                      : ""}
+                </span>
               </label>
 
               <label className="ds-login-field">
@@ -274,17 +314,32 @@ export default function LoginPage() {
                     <PasswordVisibilityIcon isVisible={showPassword} />
                   </button>
                 </div>
+                <span className="ds-login-field-note">
+                  {password.length === 0
+                    ? "Tu contraseña se mantiene oculta mientras escribís."
+                    : ""}
+                </span>
               </label>
 
               <div className="ds-login-forgot-row">
                 <button type="button" className="ds-login-forgot-link" onClick={handleForgotPassword}>
                   ¿Olvidaste tu contraseña?
                 </button>
+                {!canRequestReset && email.trim().length > 0 && (
+                  <span className="ds-login-inline-hint">Necesitamos un email válido para enviarte el acceso.</span>
+                )}
               </div>
 
-              <button type="button" onClick={handleLogin} disabled={loading} className="ds-login-cta">
-                {loading ? "Ingresando..." : "Ingresar"}
-              </button>
+              <div className="ds-login-cta-block">
+                <button type="button" onClick={handleLogin} disabled={loading} className="ds-login-cta">
+                  {loading ? "Ingresando..." : "Entrar"}
+                </button>
+                <div className="ds-login-signature" aria-hidden="true">
+                  <span>Seguimiento</span>
+                  <span>Rendimiento</span>
+                  <span>Constancia</span>
+                </div>
+              </div>
             </>
           ) : (
             <>
@@ -307,6 +362,13 @@ export default function LoginPage() {
                     <PasswordVisibilityIcon isVisible={showResetPassword} />
                   </button>
                 </div>
+                <span className="ds-login-field-note">
+                  {resetPassword.length === 0
+                    ? "Usá al menos 6 caracteres para crear una clave nueva."
+                    : passwordStrengthReady
+                      ? "Longitud mínima cumplida."
+                      : "Te faltan al menos 6 caracteres en total."}
+                </span>
               </label>
 
               <label className="ds-login-field">
@@ -318,7 +380,19 @@ export default function LoginPage() {
                   placeholder="••••••"
                   className="ds-login-input"
                 />
+                <span className="ds-login-field-note">
+                  {resetPasswordConfirm.length === 0
+                    ? "Repetí la contraseña para evitar errores al guardar."
+                    : passwordsMatch
+                      ? "Las contraseñas coinciden."
+                      : "Todavía no coinciden."}
+                </span>
               </label>
+
+              <div className="ds-login-checklist" aria-hidden="true">
+                <span className={passwordStrengthReady ? "is-ready" : ""}>Mínimo 6 caracteres</span>
+                <span className={passwordsMatch ? "is-ready" : ""}>Coincide con la confirmación</span>
+              </div>
 
               <button
                 type="button"
@@ -331,8 +405,22 @@ export default function LoginPage() {
             </>
           )}
 
-          {error && <p className="ds-login-feedback">{error}</p>}
-          {message && <p className="ds-login-feedback">{message}</p>}
+          {feedbackText ? (
+            <div
+              className={`ds-login-feedback ds-login-feedback-${feedbackTone}`}
+              role={feedbackTone === "error" ? "alert" : "status"}
+              aria-live={feedbackTone === "error" ? "assertive" : "polite"}
+            >
+              <strong className="ds-login-feedback-title">
+                {feedbackTone === "error"
+                  ? "Revisá este paso"
+                  : feedbackTone === "success"
+                    ? "Todo en orden"
+                    : "A tener en cuenta"}
+              </strong>
+              <p>{feedbackText}</p>
+            </div>
+          ) : null}
         </div>
       </section>
     </main>

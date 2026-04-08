@@ -1110,129 +1110,169 @@ export default function ClientePage() {
               <div aria-hidden />
             </div>
 
-            <article className="ds-workout-progress-card">
-              <div className="ds-workout-progress-track" aria-hidden>
-                <div
-                  className="ds-workout-progress-fill"
-                  style={{ width: `${workoutProgressPercent}%` }}
-                />
-              </div>
-              <div className="ds-workout-progress-meta">
-                <p className="ds-workout-progress-copy">
-                  {completedExerciseCount} / {todayPlan.length} ejercicios
-                </p>
-              </div>
-            </article>
-
             {currentWorkout ? (
-              <>
-                <article className="ds-workout-card">
-                  <div className="ds-workout-card-head">
-                    <div className="ds-workout-card-title-wrap">
-                      <span className="ds-workout-step-badge">{safeCurrentWorkoutIndex + 1}</span>
-                      <div>
-                        <h3 className="ds-workout-card-title">
-                          {exerciseById[currentWorkout.exercise_id]?.name ?? "Ejercicio"}
-                        </h3>
-                        <p className="ds-workout-card-subtitle">
-                          {currentWorkoutMeta.sets} x {currentWorkoutMeta.repsLabel}
-                        </p>
+              <div className="ds-workout-layout">
+                <div className="ds-workout-main">
+                  <article className="ds-workout-card">
+                    <div className="ds-workout-card-head">
+                      <div className="ds-workout-card-title-wrap">
+                        <span className="ds-workout-step-badge">{safeCurrentWorkoutIndex + 1}</span>
+                        <div>
+                          <h3 className="ds-workout-card-title">
+                            {exerciseById[currentWorkout.exercise_id]?.name ?? "Ejercicio"}
+                          </h3>
+                          <p className="ds-workout-card-subtitle">
+                            {currentWorkoutMeta.sets} x {currentWorkoutMeta.repsLabel}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="ds-workout-category-pill">
+                        {currentWorkout.category === "fuerza" ? "Fuerza" : "Movilidad"}
+                      </span>
+                    </div>
+
+                    <div className="ds-workout-body">
+                      <div className="ds-workout-media-card">
+                        {(() => {
+                          const exerciseUrl = exerciseById[currentWorkout.exercise_id]?.gifUrl ?? "";
+                          const embedUrl = getYouTubeEmbedUrl(exerciseUrl);
+                          return embedUrl ? (
+                            <iframe
+                              src={embedUrl}
+                              title={`Demostracion de ${exerciseById[currentWorkout.exercise_id]?.name ?? "ejercicio"}`}
+                              className="ds-workout-media"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <div className="ds-workout-media-placeholder">
+                              <span>Video no disponible</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="ds-workout-sidepanel">
+                        <div className="ds-workout-series-list">
+                          {currentSeriesChecks.map((isDone, seriesIndex) => (
+                            <button
+                              key={`${currentWorkoutKey}-serie-${seriesIndex + 1}`}
+                              type="button"
+                              className={`ds-workout-series-item ${isDone ? "is-done" : ""}`}
+                              onClick={() => toggleWorkoutSerie(safeCurrentWorkoutIndex, seriesIndex)}
+                              aria-pressed={isDone}
+                            >
+                              <span className="ds-workout-series-check" aria-hidden>
+                                {isDone ? "✓" : ""}
+                              </span>
+                              <span className="ds-workout-series-copy">
+                                <span className="ds-workout-series-label">Serie {seriesIndex + 1}</span>
+                                <span className="ds-workout-series-state">Marcala al terminar</span>
+                              </span>
+                              <span className="ds-workout-series-reps">{currentWorkoutMeta.repsLabel}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="ds-workout-nav">
+                          <button
+                            type="button"
+                            className="ds-workout-nav-btn is-secondary"
+                            onClick={() => goToWorkoutExercise("prev")}
+                            disabled={safeCurrentWorkoutIndex === 0}
+                          >
+                            Paso anterior
+                          </button>
+                          <button
+                            type="button"
+                            className="ds-workout-nav-btn is-primary"
+                            onClick={() => goToWorkoutExercise("next")}
+                            disabled={safeCurrentWorkoutIndex === todayPlan.length - 1}
+                          >
+                            Paso siguiente
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <span className="ds-workout-category-pill">
-                      {currentWorkout.category === "fuerza" ? "Fuerza" : "Movilidad"}
-                    </span>
-                  </div>
+                  </article>
+                </div>
 
-                  <div className="ds-workout-media-card">
-                    {(() => {
-                      const exerciseUrl = exerciseById[currentWorkout.exercise_id]?.gifUrl ?? "";
-                      const embedUrl = getYouTubeEmbedUrl(exerciseUrl);
-                      return embedUrl ? (
-                        <iframe
-                          src={embedUrl}
-                          title={`Demostracion de ${exerciseById[currentWorkout.exercise_id]?.name ?? "ejercicio"}`}
-                          className="ds-workout-media"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <div className="ds-workout-media-placeholder">
-                          <span>Video no disponible</span>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  <div className="ds-workout-series-list">
-                    {currentSeriesChecks.map((isDone, seriesIndex) => (
-                      <button
-                        key={`${currentWorkoutKey}-serie-${seriesIndex + 1}`}
-                        type="button"
-                        className={`ds-workout-series-item ${isDone ? "is-done" : ""}`}
-                        onClick={() => toggleWorkoutSerie(safeCurrentWorkoutIndex, seriesIndex)}
-                        aria-pressed={isDone}
-                      >
-                        <span className="ds-workout-series-check" aria-hidden>
-                          {isDone ? "✓" : ""}
-                        </span>
-                        <span className="ds-workout-series-label">Serie {seriesIndex + 1}</span>
-                        <span className="ds-workout-series-reps">{currentWorkoutMeta.repsLabel}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="ds-workout-nav">
-                    <button
-                      type="button"
-                      className="ds-workout-nav-btn is-secondary"
-                      onClick={() => goToWorkoutExercise("prev")}
-                      disabled={safeCurrentWorkoutIndex === 0}
-                    >
-                      Anterior
-                    </button>
-                    <button
-                      type="button"
-                      className="ds-workout-nav-btn is-primary"
-                      onClick={() => goToWorkoutExercise("next")}
-                      disabled={safeCurrentWorkoutIndex === todayPlan.length - 1}
-                    >
-                      Siguiente
-                    </button>
-                  </div>
-                </article>
-
-                <article className="ds-workout-bottom-status">
-                  <div className="ds-workout-bottom-progress">
-                    <div className="ds-workout-bottom-meter" aria-hidden>
+                <aside className="ds-workout-sidebar">
+                  <article className="ds-workout-progress-card">
+                    <div className="ds-workout-progress-head">
+                      <div>
+                        <p className="ds-workout-kicker">Recorrido</p>
+                        <p className="ds-workout-progress-copy">
+                          {completedExerciseCount} / {todayPlan.length} del recorrido de hoy
+                        </p>
+                      </div>
+                      <span className="ds-workout-progress-pill">{workoutProgressPercent}%</span>
+                    </div>
+                    <div className="ds-workout-progress-track" aria-hidden>
                       <div
-                        className="ds-workout-bottom-meter-fill"
-                        style={{
-                          width: `${todayPlan.length > 0 ? ((safeCurrentWorkoutIndex + 1) / todayPlan.length) * 100 : 0}%`,
-                        }}
+                        className="ds-workout-progress-fill"
+                        style={{ width: `${workoutProgressPercent}%` }}
                       />
                     </div>
-                    <div className="ds-workout-bottom-copy">
-                      <p>Ejercicio {safeCurrentWorkoutIndex + 1} de {todayPlan.length}</p>
+                    <div className="ds-workout-progress-meta">
+                      <div className="ds-workout-progress-stat">
+                        <span>En curso</span>
+                        <strong>{safeCurrentWorkoutIndex + 1} / {todayPlan.length}</strong>
+                      </div>
+                      <div className="ds-workout-progress-stat">
+                        <span>Restante</span>
+                        <strong>{Math.max(todayPlan.length - completedExerciseCount, 0)}</strong>
+                      </div>
                     </div>
+                  </article>
+
+                  <article className="ds-workout-insight-card">
+                    <div className="ds-workout-insight-head">
+                      <div>
+                        <p className="ds-workout-kicker">En foco</p>
+                        <h3 className="ds-workout-insight-title">
+                          {exerciseById[currentWorkout.exercise_id]?.name ?? "Ejercicio"}
+                        </h3>
+                      </div>
+                      <span className="ds-workout-insight-badge">
+                        {currentSeriesChecks.filter(Boolean).length}/{currentWorkoutMeta.sets}
+                      </span>
+                    </div>
+                    <div className="ds-workout-insight-grid">
+                      <div className="ds-workout-insight-stat">
+                        <span>Series</span>
+                        <strong>{currentWorkoutMeta.sets}</strong>
+                      </div>
+                      <div className="ds-workout-insight-stat">
+                        <span>Repeticiones</span>
+                        <strong>{currentWorkoutMeta.repsLabel}</strong>
+                      </div>
+                      <div className="ds-workout-insight-stat">
+                        <span>Hechas</span>
+                        <strong>{currentSeriesChecks.filter(Boolean).length}</strong>
+                      </div>
+                    </div>
+                  </article>
+
+                  <div className="ds-workout-complete-wrap">
+                    {completedToday ? (
+                      <button type="button" className="ds-workout-complete-btn" disabled>
+                        Entrenamiento ya completado hoy
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="ds-workout-complete-btn"
+                        onClick={markDone}
+                        disabled={checked.length < todayPlan.length || todayPlan.length === 0}
+                      >
+                        Marcar entrenamiento como completado
+                      </button>
+                    )}
                   </div>
-                  {completedToday ? (
-                    <button type="button" className="ds-workout-complete-btn" disabled>
-                      Entrenamiento ya completado hoy
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="ds-workout-complete-btn"
-                      onClick={markDone}
-                      disabled={checked.length < todayPlan.length || todayPlan.length === 0}
-                    >
-                      Marcar entrenamiento como completado
-                    </button>
-                  )}
-                </article>
-              </>
+                </aside>
+              </div>
             ) : (
               <article className="ds-workout-card">
                 <p className="ds-description">No hay rutina asignada para hoy.</p>
