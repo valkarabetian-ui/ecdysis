@@ -203,6 +203,7 @@ export default function ClientePage() {
   const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [passwordChanging, setPasswordChanging] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [clientRecordId, setClientRecordId] = useState("");
   const [clientAvatarUrl, setClientAvatarUrl] = useState("");
@@ -228,7 +229,13 @@ export default function ClientePage() {
   const today = new Date();
   const nowMs = today.getTime();
   const todayName = toWeekName(today);
-  const todayDateISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  // Memoized so loadData's useCallback dep doesn't change on every render
+  const todayDateISO = useMemo(
+    () =>
+      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const todayPlan = routines.filter(
     (routine) =>
       (routine.routine_date && routine.routine_date === todayDateISO) ||
@@ -775,12 +782,27 @@ export default function ClientePage() {
   const calendarLabels = useMemo(() => {
     const labelsByDate: Record<string, Set<string>> = {};
 
+    const year = monthCursor.getFullYear();
+    const month = monthCursor.getMonth();
+    const daysInMonthCount = new Date(year, month + 1, 0).getDate();
+
     routines.forEach((routine) => {
-      const key = routine.routine_date || todayDateISO;
-      if (!labelsByDate[key]) labelsByDate[key] = new Set<string>();
-      labelsByDate[key].add(
-        routine.category === "fuerza" ? "Fuerza" : "Movilidad",
-      );
+      const label = routine.category === "fuerza" ? "Fuerza" : "Movilidad";
+      if (routine.routine_date) {
+        // Specific-date routine: show only on that date
+        if (!labelsByDate[routine.routine_date]) labelsByDate[routine.routine_date] = new Set<string>();
+        labelsByDate[routine.routine_date].add(label);
+      } else {
+        // Recurring routine: show on every matching weekday in the visible month
+        for (let d = 1; d <= daysInMonthCount; d += 1) {
+          const date = new Date(year, month, d);
+          if (toWeekName(date) === routine.day) {
+            const key = localDateKey(date);
+            if (!labelsByDate[key]) labelsByDate[key] = new Set<string>();
+            labelsByDate[key].add(label);
+          }
+        }
+      }
     });
 
     liveClasses.forEach((liveClass) => {
@@ -793,7 +815,7 @@ export default function ClientePage() {
     });
 
     return labelsByDate;
-  }, [routines, liveClasses, todayDateISO]);
+  }, [routines, liveClasses, monthCursor]);
   const monthTitle = monthCursor
     .toLocaleDateString("es-AR", { month: "long", year: "numeric" })
     .toUpperCase();
@@ -1011,7 +1033,13 @@ export default function ClientePage() {
   const changePassword = async () => {
     setProfileMsg("");
     if (!newPassword) return;
+    if (newPassword.length < 6) {
+      setProfileMsg("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    setPasswordChanging(true);
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordChanging(false);
     if (updateError) {
       setProfileMsg("No se pudo actualizar la contraseña.");
       return;
@@ -1807,7 +1835,9 @@ export default function ClientePage() {
                 <div className="ds-stack-md">
                   <TextField label="Nueva contraseña" value={newPassword} onChange={setNewPassword} type="password" />
                   <div className="ds-pill-row">
-                    <PrimaryButton onClick={changePassword}>Actualizar contraseña</PrimaryButton>
+                    <PrimaryButton onClick={changePassword} disabled={passwordChanging}>
+                      {passwordChanging ? "Guardando..." : "Actualizar contraseña"}
+                    </PrimaryButton>
                     <GhostButton
                       onClick={() => {
                         setShowPasswordChange(false);

@@ -588,7 +588,7 @@ export default function AdminPage() {
         setError(data.error ?? "No se pudo crear el cliente.");
         return;
       }
-      setMsg(data.warning ?? "Cliente creado. Se envio un mail automatico para crear contraseÃ±a.");
+      setMsg(data.warning ?? "Cliente creado. Se envió un mail automático para crear contraseña.");
       showSuccessToast(data.warning ?? "Cliente creado exitosamente.");
       setNewClient({ name: "", email: "" });
       await loadAll();
@@ -674,10 +674,14 @@ export default function AdminPage() {
       gif_url: newEx.gifUrl,
       category: newEx.category,
     });
-    if (insertError) setError(insertError.message);
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      return;
+    }
     setNewEx({ name: "", gifUrl: "", category: "fuerza" });
     await loadAll();
-    if (!insertError) showSuccessToast("Ejercicio creado exitosamente.");
+    showSuccessToast("Ejercicio creado exitosamente.");
     setSaving(false);
   };
 
@@ -692,9 +696,13 @@ export default function AdminPage() {
       .from("exercises")
       .delete()
       .eq("id", exerciseId);
-    if (deleteError) setError(deleteError.message);
+    if (deleteError) {
+      setError(deleteError.message);
+      setSaving(false);
+      return;
+    }
     await loadAll();
-    if (!deleteError) showSuccessToast("Ejercicio eliminado exitosamente.");
+    showSuccessToast("Ejercicio eliminado exitosamente.");
     setSaving(false);
   };
 
@@ -772,6 +780,8 @@ export default function AdminPage() {
 
     const itemsResult = await supabase.from("routine_template_items").insert(rows);
     if (itemsResult.error) {
+      // Clean up orphaned template since items failed
+      await supabase.from("routine_templates").delete().eq("id", templateResult.data.id);
       setError(itemsResult.error.message);
       setSaving(false);
       return;
@@ -806,10 +816,14 @@ export default function AdminPage() {
       title: recForm.title,
       youtube_url: recForm.url,
     });
-    if (insertError) setError(insertError.message);
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      return;
+    }
     setRecForm({ title: "", url: "" });
     await loadAll();
-    if (!insertError) showSuccessToast("Clase grabada cargada exitosamente.");
+    showSuccessToast("Clase grabada cargada exitosamente.");
     setSaving(false);
   };
 
@@ -817,17 +831,27 @@ export default function AdminPage() {
     event.preventDefault();
     if (!liveForm.title || !liveForm.date || !liveForm.url) return;
     setSaving(true);
+    const parsedDatetime = new Date(liveForm.date);
+    if (Number.isNaN(parsedDatetime.getTime())) {
+      setError("La fecha y hora de la clase no es válida.");
+      setSaving(false);
+      return;
+    }
     const { error: insertError } = await supabase.from("live_classes").insert({
       area,
       title: liveForm.title,
-      class_datetime: new Date(liveForm.date).toISOString(),
+      class_datetime: parsedDatetime.toISOString(),
       meet_url: liveForm.url,
       cover_image_url: liveForm.coverImageUrl || null,
     });
-    if (insertError) setError(insertError.message);
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      return;
+    }
     setLiveForm({ title: "", date: "", url: "", coverImageUrl: "" });
     await loadAll();
-    if (!insertError) showSuccessToast("Clase en vivo creada exitosamente.");
+    showSuccessToast("Clase en vivo creada exitosamente.");
     setSaving(false);
   };
 
@@ -961,10 +985,14 @@ export default function AdminPage() {
       title: yogaForm.title,
       youtube_url: yogaForm.url,
     });
-    if (insertError) setError(insertError.message);
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      return;
+    }
     setYogaForm({ clientId: "", title: "", url: "" });
     await loadAll();
-    if (!insertError) showSuccessToast("Ejercicio personalizado cargado exitosamente.");
+    showSuccessToast("Ejercicio personalizado cargado exitosamente.");
     setSaving(false);
   };
 
@@ -976,10 +1004,14 @@ export default function AdminPage() {
       title: welForm.title,
       youtube_url: welForm.url,
     });
-    if (insertError) setError(insertError.message);
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      return;
+    }
     setWelForm({ title: "", url: "" });
     await loadAll();
-    if (!insertError) showSuccessToast("Video de bienvenida cargado exitosamente.");
+    showSuccessToast("Video de bienvenida cargado exitosamente.");
     setSaving(false);
   };
 

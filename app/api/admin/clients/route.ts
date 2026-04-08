@@ -123,6 +123,19 @@ export async function DELETE(request: NextRequest) {
     await supabaseAdmin.from("profiles").delete().eq("client_id", clientId);
     await supabaseAdmin.from("personalized_yoga").delete().eq("client_id", clientId);
     await supabaseAdmin.from("routines").delete().eq("client_id", clientId);
+
+    // Cascade to items before deleting templates
+    const { data: templateRows } = await supabaseAdmin
+      .from("routine_templates")
+      .select("id")
+      .eq("client_id", clientId);
+    if (templateRows && templateRows.length > 0) {
+      const templateIds = (templateRows as { id: string }[]).map((t) => t.id);
+      await supabaseAdmin
+        .from("routine_template_items")
+        .delete()
+        .in("template_id", templateIds);
+    }
     await supabaseAdmin
       .from("routine_templates")
       .delete()
