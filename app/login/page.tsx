@@ -286,13 +286,9 @@ export default function LoginPage() {
                   placeholder="hola@practicaviva.com"
                   className="ds-login-input"
                 />
-                <span className="ds-login-field-note">
-                  {email.trim().length === 0
-                    ? "Usá el correo con el que administrás o seguís tus rutinas."
-                    : !emailLooksValid
-                      ? "Sumá un formato válido, por ejemplo nombre@dominio.com."
-                      : ""}
-                </span>
+                {!emailLooksValid && email.trim().length > 0 && (
+                  <span className="ds-login-field-note">Sumá un formato válido, por ejemplo nombre@dominio.com.</span>
+                )}
               </label>
 
               <label className="ds-login-field">
@@ -314,11 +310,6 @@ export default function LoginPage() {
                     <PasswordVisibilityIcon isVisible={showPassword} />
                   </button>
                 </div>
-                <span className="ds-login-field-note">
-                  {password.length === 0
-                    ? "Tu contraseña se mantiene oculta mientras escribís."
-                    : ""}
-                </span>
               </label>
 
               <div className="ds-login-forgot-row">
