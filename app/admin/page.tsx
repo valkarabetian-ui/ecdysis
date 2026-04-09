@@ -1542,45 +1542,26 @@ export default function AdminPage() {
 
           {fuerzaPanel === "createExercise" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createExercise} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-                <FloatingCard>
-                  <div className="ds-admin-workflow-shell">
-                    <AdminWorkflowHero
-                      eyebrow={adminWorkflowCopy.createExercise.eyebrow}
-                      title={adminTitleCopy.createExercise}
-                      description={adminWorkflowCopy.createExercise.description}
-                    />
-                    <form
-                      onSubmit={async (event) => {
-                        await createExercise(event);
-                        setFuerzaPanel(null);
-                      }}
-                      className="ds-create-exercise-form ds-admin-workflow-form"
-                    >
-                      <AdminWorkflowSection step="01" title="Definí la base" description="Poné un nombre claro y elegí la categoría para ubicarlo rápido después.">
-                        <div className="ds-create-exercise-row-top">
-                          <TextField label="Nombre del ejercicio" value={newEx.name} onChange={(value) => setNewEx({ ...newEx, name: value })} placeholder="Ej. Sentadilla goblet" />
-                          <SelectField label="Categoría" value={newEx.category} onChange={(value) => setNewEx({ ...newEx, category: value as Category })}>
-                            <option value="fuerza">Fuerza</option>
-                            <option value="movilidad">Movilidad</option>
-                          </SelectField>
-                        </div>
-                      </AdminWorkflowSection>
-                      <AdminWorkflowSection step="02" title="Sumá el recurso" description="Agregá el link para que el equipo y los clientes tengan una referencia visual inmediata.">
-                        <div className="ds-create-exercise-row-bottom ds-admin-workflow-inline-cta">
-                          <TextField label="Link de YouTube" value={newEx.gifUrl} onChange={(value) => setNewEx({ ...newEx, gifUrl: value })} placeholder="https://youtube.com/..." />
-                          <PrimaryButton type="submit" className="ds-create-exercise-btn">Guardar ejercicio</PrimaryButton>
-                        </div>
-                      </AdminWorkflowSection>
-                    </form>
-                  </div>
-                </FloatingCard>
+            <div className="ds-simple-modal ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createExercise} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">Crear ejercicio</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
               </div>
-              <AdminModalScrollButton />
+              <form
+                onSubmit={async (event) => {
+                  await createExercise(event);
+                  setFuerzaPanel(null);
+                }}
+                className="ds-simple-modal-body"
+              >
+                <TextField label="Nombre del ejercicio" value={newEx.name} onChange={(value) => setNewEx({ ...newEx, name: value })} placeholder="Ej. Sentadilla goblet" />
+                <SelectField label="Categoría" value={newEx.category} onChange={(value) => setNewEx({ ...newEx, category: value as Category })}>
+                  <option value="fuerza">Fuerza</option>
+                  <option value="movilidad">Movilidad</option>
+                </SelectField>
+                <TextField label="Link de YouTube" value={newEx.gifUrl} onChange={(value) => setNewEx({ ...newEx, gifUrl: value })} placeholder="https://youtube.com/..." />
+                <PrimaryButton type="submit">Guardar ejercicio</PrimaryButton>
+              </form>
             </div>
           </div>
           )}
