@@ -3962,19 +3962,33 @@ button.ds-carousel-arrow:active {
     0 8px 18px rgba(140, 15, 58, 0.22);
 }
 
-.ds-admin-nav .ds-tab-label-short {
+.ds-admin-nav .ds-tab-label-short,
+.ds-admin-nav .ds-tab-label-long {
   display: none;
+}
+
+.ds-admin-nav .ds-tab-icon {
+  display: flex;
+  width: 22px;
+  height: 22px;
 }
 
 .ds-tab-icon {
   display: none;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
 }
 
 .ds-tab-icon > svg {
   width: 100%;
   height: 100%;
+}
+
+.ds-admin-nav > .ds-pill-row .ds-pill {
+  min-height: 46px !important;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
 }
 
 @media (max-width: 900px) {
