@@ -5461,10 +5461,11 @@ button.ds-carousel-arrow:active {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ds-modal-panel {
@@ -5497,10 +5498,9 @@ button.ds-carousel-arrow:active {
 .ds-routine-modal-panel {
   width: min(1020px, 94vw);
   max-width: 100%;
-  height: calc(100vh - 40px);
-  max-height: 960px;
+  margin: auto;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 28px;
   display: flex;
   flex-direction: column;
@@ -5514,7 +5514,9 @@ button.ds-carousel-arrow:active {
   padding: 24px 24px 20px;
   border-bottom: 1px solid rgba(140, 15, 58, 0.10);
   background: rgba(250, 245, 232, 0.96);
-  flex-shrink: 0;
+  border-radius: 28px 28px 0 0;
+  position: sticky;
+  top: 0;
   z-index: 2;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -5681,13 +5683,11 @@ button.ds-carousel-arrow:active {
 
 .ds-routine-modal-body {
   padding: 20px 24px 40px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
   background: rgba(140, 15, 58, 0.04);
+  border-radius: 0 0 28px 28px;
 }
 
 .ds-routine-modal-body > .ds-card,
