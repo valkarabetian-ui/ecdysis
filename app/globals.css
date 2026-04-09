@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --font-open-sans: "Satoshi", "Avenir Next", "Segoe UI", "Trebuchet MS", "Verdana", "Geneva", sans-serif;
-  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Georgia", serif;
+  --font-open-sans: "Gill Sans", "Gill Sans MT", "Optima", "Candara", "Calibri", "Trebuchet MS", sans-serif;
+  --font-display: "Gill Sans", "Gill Sans MT", "Optima", "Candara", "Calibri", "Trebuchet MS", sans-serif;
   --ds-type-h1: clamp(2.35rem, 4vw, 3.6rem);
   --ds-type-h2: clamp(1.5rem, 2.3vw, 2.1rem);
   --ds-type-h3: clamp(1.08rem, 1.5vw, 1.3rem);
@@ -379,9 +379,9 @@ body {
   margin: var(--ds-space-1) 0 0;
   font-size: var(--ds-type-h1);
   line-height: var(--ds-lh-tight);
-  font-family: var(--font-display);
+  font-family: var(--font-open-sans);
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.03em;
   color: var(--ds-text-strong);
   text-shadow: none;
   overflow-wrap: anywhere;
@@ -4599,9 +4599,9 @@ button.ds-carousel-arrow:active {
   font-size: clamp(2rem, 3.3vw, 2.85rem);
   line-height: 0.98;
   color: rgba(248, 250, 246, 0.98);
-  font-family: var(--font-display);
+  font-family: var(--font-open-sans);
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
   display: flex;
   align-items: baseline;
