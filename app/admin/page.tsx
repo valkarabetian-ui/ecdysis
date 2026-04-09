@@ -33,7 +33,7 @@ type Client = {
   goals?: string | null;
   attention_notes?: string | null;
 };
-type Exercise = { id: string; name: string; gif_url: string; category: Category };
+type Exercise = { id: string; name: string; gif_url: string; category: Category; observations?: string | null };
 type Routine = {
   id: string;
   client_id: string;
@@ -373,7 +373,7 @@ export default function AdminPage() {
   const [clientActivityById, setClientActivityById] = useState<Record<string, ClientActivitySummary>>({});
 
   const [newClient, setNewClient] = useState({ name: "", email: "" });
-  const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category });
+  const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category, observations: "" });
   const [fuerzaPanel, setFuerzaPanel] = useState<
     "createExercise" | "listExercises" | "assignRoutine" | "createTemplate" | "uploadRecorded" | "createLive" | "manageEncounters" | null
   >(null);
@@ -674,13 +674,14 @@ export default function AdminPage() {
       name: newEx.name,
       gif_url: newEx.gifUrl,
       category: newEx.category,
+      observations: newEx.observations || null,
     });
     if (insertError) {
       setError(insertError.message);
       setSaving(false);
       return;
     }
-    setNewEx({ name: "", gifUrl: "", category: "fuerza" });
+    setNewEx({ name: "", gifUrl: "", category: "fuerza", observations: "" });
     await loadAll();
     showSuccessToast("Ejercicio creado exitosamente.");
     setSaving(false);
@@ -1503,7 +1504,7 @@ export default function AdminPage() {
       {tab === "fuerza" && (
         <>
           <div className="ds-admin-fuerza-grid">
-            <FloatingCard title="Ejercicios" className="ds-admin-fuerza-card-compact">
+            <FloatingCard title="Biblioteca de ejercicios" className="ds-admin-fuerza-card-compact">
               <div className="ds-admin-group-actions">
                 <GhostButton onClick={() => setFuerzaPanel("createExercise")}>
                   {adminTitleCopy.createExercise}
@@ -1514,7 +1515,7 @@ export default function AdminPage() {
               </div>
             </FloatingCard>
 
-            <FloatingCard title="Rutinas" className="ds-admin-fuerza-card-compact">
+            <FloatingCard title="Asignar rutina" className="ds-admin-fuerza-card-compact">
               <div className="ds-admin-group-actions">
                 <GhostButton onClick={() => setFuerzaPanel("assignRoutine")}>
                   {adminTitleCopy.createRoutine}
@@ -1524,21 +1525,21 @@ export default function AdminPage() {
                 </GhostButton>
               </div>
             </FloatingCard>
-          </div>
 
-          <FloatingCard title="Clases" className="ds-admin-fuerza-card-wide">
-            <div className="ds-admin-group-actions ds-admin-group-actions-classes">
-              <GhostButton onClick={() => setFuerzaPanel("uploadRecorded")}>
-                {adminTitleCopy.createRecordedClass}
-              </GhostButton>
-              <GhostButton onClick={() => setFuerzaPanel("createLive")}>
-                {adminTitleCopy.createLiveClass}
-              </GhostButton>
-              <GhostButton onClick={() => setFuerzaPanel("manageEncounters")}>
-                {adminTitleCopy.manageClasses}
-              </GhostButton>
-            </div>
-          </FloatingCard>
+            <FloatingCard title="Clases" className="ds-admin-fuerza-card-compact">
+              <div className="ds-admin-group-actions">
+                <GhostButton onClick={() => setFuerzaPanel("uploadRecorded")}>
+                  {adminTitleCopy.createRecordedClass}
+                </GhostButton>
+                <GhostButton onClick={() => setFuerzaPanel("createLive")}>
+                  {adminTitleCopy.createLiveClass}
+                </GhostButton>
+                <GhostButton onClick={() => setFuerzaPanel("manageEncounters")}>
+                  {adminTitleCopy.manageClasses}
+                </GhostButton>
+              </div>
+            </FloatingCard>
+          </div>
 
           {fuerzaPanel === "createExercise" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
@@ -1560,6 +1561,16 @@ export default function AdminPage() {
                   <option value="movilidad">Movilidad</option>
                 </SelectField>
                 <TextField label="Link de YouTube" value={newEx.gifUrl} onChange={(value) => setNewEx({ ...newEx, gifUrl: value })} placeholder="https://youtube.com/..." />
+                <label className="ds-field">
+                  <span className="ds-field-label">Observaciones</span>
+                  <textarea
+                    value={newEx.observations}
+                    onChange={(event) => setNewEx({ ...newEx, observations: event.target.value })}
+                    placeholder="Ej. Recordá mantener la espalda derecha"
+                    className="ds-input ds-simple-modal-textarea"
+                    rows={3}
+                  />
+                </label>
                 <PrimaryButton type="submit">Guardar ejercicio</PrimaryButton>
               </form>
             </div>
@@ -1567,360 +1578,229 @@ export default function AdminPage() {
           )}
 
           {fuerzaPanel === "listExercises" && (
-            <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.exerciseLibrary} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-                <FloatingCard title={adminTitleCopy.exerciseLibrary}>
-                  <div className="ds-grid-2">
-                    <TextField
-                      label="Buscar ejercicios"
-                      value={exerciseSearch}
-                      onChange={setExerciseSearch}
-                      placeholder="Ej. Sentadilla"
-                    />
-                    <SelectField
-                      label="Categoría"
-                      value={exerciseCategoryFilter}
-                      onChange={(value) => setExerciseCategoryFilter(value as "todas" | Category)}
-                    >
-                      <option value="todas">Todas</option>
-                      <option value="fuerza">Fuerza</option>
-                      <option value="movilidad">Movilidad</option>
-                    </SelectField>
-                  </div>
-                  {filteredExercises.length > 0 && (
-                    <div className="ds-clients-table-wrap ds-encounters-table-wrap">
-                      <table className="ds-clients-table ds-encounters-table">
-                        <thead>
-                          <tr>
-                            <th>{adminTableCopy.name}</th>
-                            <th>{adminTableCopy.category}</th>
-                            <th>{adminTableCopy.access}</th>
-                            <th className="ds-encounter-actions-col" aria-label="Acciones" />
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredExercises.map((exercise) => (
-                            <tr key={exercise.id}>
-                              <td>{exercise.name}</td>
-                              <td>{exercise.category}</td>
-                              <td>
-                                <a className="ds-link-inline" href={exercise.gif_url} target="_blank" rel="noreferrer">
-                                  {adminActionCopy.watchVideo}
-                                </a>
-                              </td>
-                              <td>
-                                <div className="ds-client-row-actions">
-                                  <button
-                                    type="button"
-                                    className="ds-encounter-action-btn ds-encounter-delete-btn"
-                                    onClick={() => deleteExercise(exercise.id)}
-                                    aria-label={`Borrar ejercicio ${exercise.name}`}
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                      <path d="M3 6h18" />
-                                      <path d="M8 6V4h8v2" />
-                                      <path d="M19 6l-1 14H6L5 6" />
-                                      <path d="M10 11v6M14 11v6" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  {filteredExercises.length === 0 && (
-                    <div className="ds-admin-empty-state">
-                      <strong>{adminEmptyCopy.exercises.title}</strong>
-                      <p>{adminEmptyCopy.exercises.description}</p>
-                    </div>
-                  )}
-                </FloatingCard>
+          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
+            <div className="ds-simple-modal ds-simple-modal-wide ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.exerciseLibrary} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">{adminTitleCopy.exerciseLibrary}</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
               </div>
-              <AdminModalScrollButton />
+              <div className="ds-simple-modal-body">
+                <div className="ds-simple-modal-filters">
+                  <TextField
+                    label="Buscar ejercicios"
+                    value={exerciseSearch}
+                    onChange={setExerciseSearch}
+                    placeholder="Ej. Sentadilla"
+                  />
+                  <SelectField
+                    label="Categoría"
+                    value={exerciseCategoryFilter}
+                    onChange={(value) => setExerciseCategoryFilter(value as "todas" | Category)}
+                  >
+                    <option value="todas">Todas</option>
+                    <option value="fuerza">Fuerza</option>
+                    <option value="movilidad">Movilidad</option>
+                  </SelectField>
+                </div>
+                {filteredExercises.length > 0 && (
+                  <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                    <table className="ds-clients-table ds-encounters-table">
+                      <thead>
+                        <tr>
+                          <th>{adminTableCopy.name}</th>
+                          <th>{adminTableCopy.category}</th>
+                          <th>{adminTableCopy.access}</th>
+                          <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredExercises.map((exercise) => (
+                          <tr key={exercise.id}>
+                            <td>{exercise.name}</td>
+                            <td>{exercise.category}</td>
+                            <td>
+                              <a className="ds-link-inline" href={exercise.gif_url} target="_blank" rel="noreferrer">
+                                {adminActionCopy.watchVideo}
+                              </a>
+                            </td>
+                            <td>
+                              <div className="ds-client-row-actions">
+                                <button
+                                  type="button"
+                                  className="ds-encounter-action-btn ds-encounter-delete-btn"
+                                  onClick={() => deleteExercise(exercise.id)}
+                                  aria-label={`Borrar ejercicio ${exercise.name}`}
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4h8v2" />
+                                    <path d="M19 6l-1 14H6L5 6" />
+                                    <path d="M10 11v6M14 11v6" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {filteredExercises.length === 0 && (
+                  <div className="ds-admin-empty-state">
+                    <strong>{adminEmptyCopy.exercises.title}</strong>
+                    <p>{adminEmptyCopy.exercises.description}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           )}
 
           {fuerzaPanel === "assignRoutine" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createRoutine} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-                <FloatingCard>
-                  <div className="ds-admin-workflow-shell">
-                    <AdminWorkflowHero
-                      eyebrow={adminWorkflowCopy.createRoutine.eyebrow}
-                      title={adminTitleCopy.createRoutine}
-                      description={adminWorkflowCopy.createRoutine.description}
-                    />
-                    <form id="assign-routine-form" onSubmit={addRoutineToDraft} className="ds-admin-workflow-form">
-                      <AdminWorkflowSection step="01" title="Elegí el contexto" description="Seleccioná a quién va dirigida la rutina, qué enfoque tiene y desde cuándo empieza.">
-                        <div className="ds-grid-3 ds-admin-workflow-grid">
-                          <SelectField label="Cliente" value={assign.clientId} onChange={(value) => setAssign({ ...assign, clientId: value })}>
-                            <option value="">Elegir cliente</option>
-                            {clients.map((client) => (
-                              <option key={client.id} value={client.id}>{client.name}</option>
-                            ))}
-                          </SelectField>
-                          <SelectField label="Categoría" value={assign.category} onChange={(value) => setAssign({ ...assign, category: value as Category, exerciseId: "" })}>
-                            <option value="fuerza">Fuerza</option>
-                            <option value="movilidad">Movilidad</option>
-                          </SelectField>
-                          <SelectField label="Plan" value={assign.planType} onChange={(value) => setAssign({ ...assign, planType: value as PlanType })}>
-                            <option value="semanal">Semanal</option>
-                            <option value="mensual">Mensual</option>
-                          </SelectField>
-                          <TextField label="Fecha de inicio" value={assign.routineDate} onChange={(value) => setAssign({ ...assign, routineDate: value })} type="date" />
-                        </div>
-                      </AdminWorkflowSection>
-                      <AdminWorkflowSection step="02" title="Cargá el ejercicio" description="Definí qué se hace y con qué volumen antes de sumarlo al borrador.">
-                        <div className="ds-grid-3 ds-admin-workflow-grid">
-                          <SelectField label="Ejercicio" value={assign.exerciseId} onChange={(value) => setAssign({ ...assign, exerciseId: value })}>
-                            <option value="">Elegir ejercicio</option>
-                            {exercises.filter((exercise) => exercise.category === assign.category).map((exercise) => (
-                              <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
-                            ))}
-                          </SelectField>
-                          <TextField
-                            label="Series"
-                            value={assign.series}
-                            onChange={(value) => setAssign({ ...assign, series: value })}
-                            placeholder="Ej. 4"
-                            type="number"
-                          />
-                          <TextField
-                            label="Repeticiones"
-                            value={assign.reps}
-                            onChange={(value) => setAssign({ ...assign, reps: value })}
-                            placeholder="Ej. 10"
-                          />
-                        </div>
-                      </AdminWorkflowSection>
-                    </form>
-                  {assignDraft.length > 0 && (
-                    <AdminWorkflowSection step="03" title="Revisá el borrador" description="Cada ejercicio que agregás se lista acá para validar la rutina antes de guardarla.">
-                      <div className="ds-admin-workflow-draft-list">
-                  {assignDraft.map((item, index) => (
-                    <EditorialWorkoutCard
-                      key={`${item.exercise_id}-${index}`}
-                      title={`${exerciseName(item.exercise_id)} - ${item.series} series x ${item.repetitions} reps`}
-                      meta={`${item.routine_date ?? item.day} / ${item.plan_type}`}
-                    />
-                  ))}
-                      </div>
-                    </AdminWorkflowSection>
-                  )}
-                  <div className="ds-assign-bottom-actions">
-                    <PrimaryButton className="ds-assign-add-btn" type="submit" form="assign-routine-form">{adminActionCopy.addExercise}</PrimaryButton>
-                    <GhostButton
-                      className="ds-assign-routine-btn ds-assign-save-btn"
-                      onClick={async () => {
-                        await saveRoutineDraft();
-                        setFuerzaPanel(null);
-                      }}
-                    >
-                      {adminActionCopy.saveRoutine}
-                    </GhostButton>
-                  </div>
-                  </div>
-                </FloatingCard>
+            <div className="ds-simple-modal ds-simple-modal-wide ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createRoutine} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">Crear rutina</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
               </div>
-              <AdminModalScrollButton />
+              <div className="ds-simple-modal-body">
+                <form id="assign-routine-form" onSubmit={addRoutineToDraft} className="ds-simple-modal-grid">
+                  <SelectField label="Cliente" value={assign.clientId} onChange={(value) => setAssign({ ...assign, clientId: value })}>
+                    <option value="">Elegir cliente</option>
+                    {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+                  </SelectField>
+                  <SelectField label="Categoría" value={assign.category} onChange={(value) => setAssign({ ...assign, category: value as Category, exerciseId: "" })}>
+                    <option value="fuerza">Fuerza</option>
+                    <option value="movilidad">Movilidad</option>
+                  </SelectField>
+                  <SelectField label="Plan" value={assign.planType} onChange={(value) => setAssign({ ...assign, planType: value as PlanType })}>
+                    <option value="semanal">Semanal</option>
+                    <option value="mensual">Mensual</option>
+                  </SelectField>
+                  <TextField label="Fecha de inicio" value={assign.routineDate} onChange={(value) => setAssign({ ...assign, routineDate: value })} type="date" />
+                  <SelectField label="Ejercicio" value={assign.exerciseId} onChange={(value) => setAssign({ ...assign, exerciseId: value })}>
+                    <option value="">Elegir ejercicio</option>
+                    {exercises.filter((e) => e.category === assign.category).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </SelectField>
+                  <TextField label="Series" value={assign.series} onChange={(value) => setAssign({ ...assign, series: value })} placeholder="Ej. 4" type="number" />
+                  <TextField label="Repeticiones" value={assign.reps} onChange={(value) => setAssign({ ...assign, reps: value })} placeholder="Ej. 10" />
+                </form>
+                {assignDraft.length > 0 && (
+                  <div className="ds-simple-modal-draft">
+                    <p className="ds-simple-modal-draft-label">Borrador ({assignDraft.length})</p>
+                    {assignDraft.map((item, index) => (
+                      <div key={`${item.exercise_id}-${index}`} className="ds-simple-modal-draft-row">
+                        <span>{exerciseName(item.exercise_id)}</span>
+                        <span className="ds-simple-modal-draft-meta">{item.series} series × {item.repetitions} reps · {item.routine_date ?? item.day}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="ds-simple-modal-actions">
+                  <PrimaryButton type="submit" form="assign-routine-form">{adminActionCopy.addExercise}</PrimaryButton>
+                  <GhostButton onClick={async () => { await saveRoutineDraft(); setFuerzaPanel(null); }}>{adminActionCopy.saveRoutine}</GhostButton>
+                </div>
+              </div>
             </div>
           </div>
           )}
 
           {fuerzaPanel === "createTemplate" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createTemplate} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-                <FloatingCard>
-                  <div className="ds-admin-workflow-shell">
-                    <AdminWorkflowHero
-                      eyebrow={adminWorkflowCopy.createTemplate.eyebrow}
-                      title={adminTitleCopy.createTemplate}
-                      description={adminWorkflowCopy.createTemplate.description}
-                    />
-                    <form
-                      onSubmit={async (event) => {
-                        await saveTemplate(event);
-                        setFuerzaPanel(null);
-                      }}
-                      className="ds-admin-workflow-form"
-                    >
-                      <AdminWorkflowSection step="01" title="Definí la plantilla" description="Elegí el cliente, el nombre y la estructura general para dejar la base lista.">
-                        <div className="ds-grid-3 ds-admin-workflow-grid">
-                          <SelectField label="Cliente" value={tpl.clientId} onChange={(value) => setTpl({ ...tpl, clientId: value })}>
-                            <option value="">Elegir cliente</option>
-                            {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
-                          </SelectField>
-                          <TextField label="Nombre de la plantilla" value={tpl.name} onChange={(value) => setTpl({ ...tpl, name: value })} placeholder="Ej. Semana 1 tren superior" />
-                          <SelectField label="Categoría" value={tpl.category} onChange={(value) => setTpl({ ...tpl, category: value as Category, exerciseId: "" })}>
-                            <option value="fuerza">Fuerza</option>
-                            <option value="movilidad">Movilidad</option>
-                          </SelectField>
-                          <SelectField label="Plan" value={tpl.planType} onChange={(value) => setTpl({ ...tpl, planType: value as PlanType })}>
-                            <option value="semanal">Semanal</option>
-                            <option value="mensual">Mensual</option>
-                          </SelectField>
-                          <TextField label="Fecha de inicio" value={tpl.startDate} onChange={(value) => setTpl({ ...tpl, startDate: value })} type="date" />
-                        </div>
-                      </AdminWorkflowSection>
-                      <AdminWorkflowSection step="02" title="Sumá un ejercicio" description="Cargá un ejercicio con volumen para empezar a construir la secuencia de la plantilla.">
-                        <div className="ds-grid-3 ds-admin-workflow-grid">
-                          <SelectField label="Ejercicio" value={tpl.exerciseId} onChange={(value) => setTpl({ ...tpl, exerciseId: value })}>
-                            <option value="">Elegir ejercicio</option>
-                            {exercises.filter((exercise) => exercise.category === tpl.category).map((exercise) => (
-                              <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
-                            ))}
-                          </SelectField>
-                          <TextField label="Series" value={tpl.series} onChange={(value) => setTpl({ ...tpl, series: value })} type="number" placeholder="Ej. 4" />
-                          <TextField label="Repeticiones" value={tpl.reps} onChange={(value) => setTpl({ ...tpl, reps: value })} placeholder="Ej. 10" />
-                        </div>
-                        <div className="ds-template-actions">
-                          <GhostButton onClick={addTemplateItemToDraft}>
-                            {adminActionCopy.addToTemplate}
-                          </GhostButton>
-                          <PrimaryButton type="submit">
-                            {adminActionCopy.saveTemplate}
-                          </PrimaryButton>
-                        </div>
-                      </AdminWorkflowSection>
-                    </form>
-
-                    {templates.map((template) => (
-                      <FloatingCard key={template.id} title={`${template.name} - ${clientName(template.client_id)}`} description={template.plan_type}>
-                        {template.items.map((item) => (
-                          <div key={item.id} className="ds-grid-3">
-                            <SelectField label="Ejercicio" value={item.exercise_id} onChange={(value) => updateTemplateItem(item.id, "exercise_id", value)}>
-                              {exercises.filter((exercise) => exercise.category === template.category).map((exercise) => (
-                                <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
-                              ))}
-                            </SelectField>
-                            <TextField label="Series" value={item.series} onChange={(value) => updateTemplateItem(item.id, "series", value)} type="number" />
-                            <TextField label="Repeticiones" value={item.repetitions} onChange={(value) => updateTemplateItem(item.id, "repetitions", value)} />
-                          </div>
-                        ))}
-                      </FloatingCard>
-                    ))}
-                  </div>
-                </FloatingCard>
+            <div className="ds-simple-modal ds-simple-modal-wide ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createTemplate} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">Crear plantilla</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
               </div>
-              <AdminModalScrollButton />
+              <div className="ds-simple-modal-body">
+                <form onSubmit={async (event) => { await saveTemplate(event); setFuerzaPanel(null); }} className="ds-simple-modal-grid">
+                  <SelectField label="Cliente" value={tpl.clientId} onChange={(value) => setTpl({ ...tpl, clientId: value })}>
+                    <option value="">Elegir cliente</option>
+                    {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+                  </SelectField>
+                  <TextField label="Nombre de la plantilla" value={tpl.name} onChange={(value) => setTpl({ ...tpl, name: value })} placeholder="Ej. Semana 1 tren superior" />
+                  <SelectField label="Categoría" value={tpl.category} onChange={(value) => setTpl({ ...tpl, category: value as Category, exerciseId: "" })}>
+                    <option value="fuerza">Fuerza</option>
+                    <option value="movilidad">Movilidad</option>
+                  </SelectField>
+                  <SelectField label="Plan" value={tpl.planType} onChange={(value) => setTpl({ ...tpl, planType: value as PlanType })}>
+                    <option value="semanal">Semanal</option>
+                    <option value="mensual">Mensual</option>
+                  </SelectField>
+                  <TextField label="Fecha de inicio" value={tpl.startDate} onChange={(value) => setTpl({ ...tpl, startDate: value })} type="date" />
+                  <SelectField label="Ejercicio" value={tpl.exerciseId} onChange={(value) => setTpl({ ...tpl, exerciseId: value })}>
+                    <option value="">Elegir ejercicio</option>
+                    {exercises.filter((e) => e.category === tpl.category).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </SelectField>
+                  <TextField label="Series" value={tpl.series} onChange={(value) => setTpl({ ...tpl, series: value })} type="number" placeholder="Ej. 4" />
+                  <TextField label="Repeticiones" value={tpl.reps} onChange={(value) => setTpl({ ...tpl, reps: value })} placeholder="Ej. 10" />
+                  <div className="ds-simple-modal-actions">
+                    <GhostButton onClick={addTemplateItemToDraft}>{adminActionCopy.addToTemplate}</GhostButton>
+                    <PrimaryButton type="submit">{adminActionCopy.saveTemplate}</PrimaryButton>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
           )}
 
           {fuerzaPanel === "uploadRecorded" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createRecordedClass} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-                <FloatingCard>
-                  <div className="ds-admin-workflow-shell">
-                    <AdminWorkflowHero
-                      eyebrow={adminWorkflowCopy.createRecordedClass.eyebrow}
-                      title={adminTitleCopy.createRecordedClass}
-                      description={adminWorkflowCopy.createRecordedClass.description}
-                    />
-                    <form
-                      onSubmit={async (event) => {
-                        await createRecorded(event, "fuerza");
-                        setFuerzaPanel(null);
-                      }}
-                      className="ds-grid-3 ds-inline-upload-form ds-admin-workflow-form"
-                    >
-                      <AdminWorkflowSection step="01" title="Presentá la clase" description="Elegí un título claro y el acceso para que la clase se entienda de un vistazo." className="ds-admin-workflow-section-full">
-                        <div className="ds-grid-3 ds-inline-upload-form ds-admin-workflow-grid ds-admin-workflow-inline-form">
-                          <TextField label="Título de la clase" value={recForm.title} onChange={(value) => setRecForm({ ...recForm, title: value })} placeholder="Ej. Fuerza express de piernas" />
-                          <TextField label="Link de YouTube" value={recForm.url} onChange={(value) => setRecForm({ ...recForm, url: value })} placeholder="https://youtube.com/..." />
-                          <PrimaryButton type="submit">{adminActionCopy.saveRecordedClass}</PrimaryButton>
-                        </div>
-                      </AdminWorkflowSection>
-                    </form>
-                  </div>
-                </FloatingCard>
+            <div className="ds-simple-modal ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createRecordedClass} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">Clase grabada</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
               </div>
-              <AdminModalScrollButton />
+              <form onSubmit={async (event) => { await createRecorded(event, "fuerza"); setFuerzaPanel(null); }} className="ds-simple-modal-body">
+                <TextField label="Título de la clase" value={recForm.title} onChange={(value) => setRecForm({ ...recForm, title: value })} placeholder="Ej. Fuerza express de piernas" />
+                <TextField label="Link de YouTube" value={recForm.url} onChange={(value) => setRecForm({ ...recForm, url: value })} placeholder="https://youtube.com/..." />
+                <PrimaryButton type="submit">{adminActionCopy.saveRecordedClass}</PrimaryButton>
+              </form>
             </div>
           </div>
           )}
 
           {fuerzaPanel === "createLive" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createLiveClass} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-                <FloatingCard>
-                  <div className="ds-admin-workflow-shell">
-                    <AdminWorkflowHero
-                      eyebrow={adminWorkflowCopy.createLiveClass.eyebrow}
-                      title={adminTitleCopy.createLiveClass}
-                      description={adminWorkflowCopy.createLiveClass.description}
-                    />
-                    <form
-                      onSubmit={async (event) => {
-                        await createLive(event, "fuerza");
-                        setFuerzaPanel(null);
-                      }}
-                      className="ds-admin-workflow-form"
-                    >
-                      <AdminWorkflowSection step="01" title="Configurá el encuentro" description="Definí cómo se presenta la clase y cuándo sucede para que quede lista para anunciar.">
-                        <div className="ds-grid-4 ds-inline-upload-form ds-live-class-form ds-admin-workflow-grid">
-                          <TextField label="Título de la clase" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} placeholder="Ej. Clase en vivo de movilidad" />
-                          <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
-                          <TextField label="Link de Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} placeholder="https://meet.google.com/..." />
-                          <label className="ds-field">
-                            <span className="ds-field-label">Foto de portada</span>
-                            <input
-                              className="ds-input"
-                              type="file"
-                              accept="image/*"
-                              onChange={(event) => void handleLiveCoverPick(event.target.files?.[0])}
-                            />
-                          </label>
-                          <PrimaryButton type="submit">{adminActionCopy.saveLiveClass}</PrimaryButton>
-                        </div>
-                      </AdminWorkflowSection>
-                    </form>
-                    {liveForm.coverImageUrl && (
-                      <div className="ds-inline-panel ds-admin-workflow-preview-panel">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={liveForm.coverImageUrl} alt="Vista previa de portada" className="ds-live-cover-preview" />
-                      </div>
-                    )}
-                  </div>
-                </FloatingCard>
+            <div className="ds-simple-modal ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.createLiveClass} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">{adminTitleCopy.createLiveClass}</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
               </div>
-              <AdminModalScrollButton />
+              <form
+                onSubmit={async (event) => { await createLive(event, "fuerza"); setFuerzaPanel(null); }}
+                className="ds-simple-modal-body"
+              >
+                <TextField label="Título de la clase" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} placeholder="Ej. Clase en vivo de movilidad" />
+                <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
+                <TextField label="Link de Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} placeholder="https://meet.google.com/..." />
+                <label className="ds-field">
+                  <span className="ds-field-label">Foto de portada</span>
+                  <input
+                    className="ds-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => void handleLiveCoverPick(event.target.files?.[0])}
+                  />
+                </label>
+                {liveForm.coverImageUrl && (
+                  <img src={liveForm.coverImageUrl} alt="Vista previa de portada" className="ds-live-cover-preview" style={{ borderRadius: 12, maxHeight: 160, objectFit: "cover" }} />
+                )}
+                <PrimaryButton type="submit">{adminActionCopy.saveLiveClass}</PrimaryButton>
+              </form>
             </div>
           </div>
           )}
 
           {fuerzaPanel === "manageEncounters" && (
           <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-modal-panel ds-routine-modal-panel ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.manageClasses} onClick={(event) => event.stopPropagation()}>
-              <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>
-                ×
-              </button>
-              <div className="ds-routine-modal-body">
-          <FloatingCard title={adminTitleCopy.manageClasses}>
+            <div className="ds-simple-modal ds-simple-modal-wide ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.manageClasses} onClick={(event) => event.stopPropagation()}>
+              <div className="ds-simple-modal-head">
+                <h3 className="ds-h3">{adminTitleCopy.manageClasses}</h3>
+                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
+              </div>
+              <div className="ds-simple-modal-body">
                 <Tabs
                   items={[
                     { id: "recorded", label: "Clases grabadas" },
@@ -1998,10 +1878,7 @@ export default function AdminPage() {
                                         <button
                                           type="button"
                                           className="ds-encounter-action-btn ds-encounter-save-btn"
-                                          onClick={async () => {
-                                            await saveRecorded(item.id);
-                                            setFuerzaPanel(null);
-                                          }}
+                                          onClick={async () => { await saveRecorded(item.id); setFuerzaPanel(null); }}
                                           aria-label={adminActionCopy.saveChanges}
                                         >
                                           <span aria-hidden>✓</span>
@@ -2099,10 +1976,7 @@ export default function AdminPage() {
                                         <button
                                           type="button"
                                           className="ds-encounter-action-btn ds-encounter-save-btn"
-                                          onClick={async () => {
-                                            await saveLive(item.id);
-                                            setFuerzaPanel(null);
-                                          }}
+                                          onClick={async () => { await saveLive(item.id); setFuerzaPanel(null); }}
                                           aria-label={adminActionCopy.saveChanges}
                                         >
                                           <span aria-hidden>✓</span>
@@ -2136,9 +2010,7 @@ export default function AdminPage() {
                     )}
                   </>
                 )}
-          </FloatingCard>
               </div>
-              <AdminModalScrollButton />
             </div>
           </div>
           )}

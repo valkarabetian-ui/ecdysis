@@ -31,7 +31,7 @@ type Routine = {
   repetitions: string;
   exercise_id: string;
 };
-type Exercise = { id: string; name: string; gif_url: string };
+type Exercise = { id: string; name: string; gif_url: string; observations?: string | null };
 type WelcomeVideo = { id: string; title: string; youtube_url: string };
 type RecordedClass = {
   id: string;
@@ -181,8 +181,9 @@ export default function ClientePage() {
 
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [exerciseById, setExerciseById] = useState<
-    Record<string, { name: string; gifUrl: string }>
+    Record<string, { name: string; gifUrl: string; observations?: string | null }>
   >({});
+  const [heatmapCursor, setHeatmapCursor] = useState(() => new Date());
   const [welcomeVideos, setWelcomeVideos] = useState<WelcomeVideo[]>([]);
   const [recordedFuerza, setRecordedFuerza] = useState<RecordedClass[]>([]);
   const [recordedYoga, setRecordedYoga] = useState<RecordedClass[]>([]);
@@ -401,14 +402,15 @@ export default function ClientePage() {
     if (exerciseIds.length > 0) {
       const exercisesQ = await supabase
         .from("exercises")
-        .select("id, name, gif_url")
+        .select("id, name, gif_url, observations")
         .in("id", exerciseIds);
       if (!exercisesQ.error) {
-        const map: Record<string, { name: string; gifUrl: string }> = {};
+        const map: Record<string, { name: string; gifUrl: string; observations?: string | null }> = {};
         ((exercisesQ.data as Exercise[]) ?? []).forEach((exercise) => {
           map[exercise.id] = {
             name: exercise.name,
             gifUrl: exercise.gif_url,
+            observations: exercise.observations ?? null,
           };
         });
         setExerciseById(map);
@@ -819,6 +821,31 @@ export default function ClientePage() {
   const monthTitle = monthCursor
     .toLocaleDateString("es-AR", { month: "long", year: "numeric" })
     .toUpperCase();
+
+  const heatmapDays = useMemo(() => {
+    const year = heatmapCursor.getFullYear();
+    const month = heatmapCursor.getMonth();
+    const first = new Date(year, month, 1);
+    const total = new Date(year, month + 1, 0).getDate();
+    const initialBlanks = (first.getDay() + 6) % 7;
+    const cells: (Date | null)[] = Array.from({ length: initialBlanks }, () => null);
+    for (let i = 1; i <= total; i += 1) cells.push(new Date(year, month, i));
+    return cells;
+  }, [heatmapCursor]);
+
+  const heatmapTitle = heatmapCursor.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+
+  const completedDateKeys = useMemo(
+    () => new Set(completionRows.map((row) => row.completion_date)),
+    [completionRows],
+  );
+
+  const heatmapMonthTrainedCount = useMemo(() => {
+    const year = heatmapCursor.getFullYear();
+    const month = String(heatmapCursor.getMonth() + 1).padStart(2, "0");
+    const prefix = `${year}-${month}`;
+    return completionRows.filter((row) => row.completion_date.startsWith(prefix)).length;
+  }, [completionRows, heatmapCursor]);
   const todayCalendarLabels = Array.from(calendarLabels[todayDateISO] ?? []);
 
   const markDone = async () => {
@@ -1095,14 +1122,16 @@ export default function ClientePage() {
   return (
     <ProtectedRoute allowedRole="cliente">
       <AppShell kicker="" title={showTodayWorkout && tab === "inicio" ? "" : "Práctica viva"}>
-      <div
-        className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}
-        style={{
-          transform: `translate(-50%, ${Math.round(-56 + pullDistance)}px)`,
-        }}
-      >
-        {refreshing ? "Actualizando..." : pullDistance >= 72 ? "Solta para actualizar" : "Desliza hacia abajo"}
-      </div>
+      {(refreshing || pullDistance > 0) && (
+        <div
+          className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}
+          style={{
+            transform: `translate(-50%, ${Math.round(-56 + pullDistance)}px)`,
+          }}
+        >
+          {refreshing ? "Actualizando..." : pullDistance >= 72 ? "Solta para actualizar" : "Desliza hacia abajo"}
+        </div>
+      )}
 
       <div
         className="ds-cliente-flow"
@@ -1202,6 +1231,15 @@ export default function ClientePage() {
                             </button>
                           ))}
                         </div>
+
+                        {exerciseById[currentWorkout.exercise_id]?.observations && (
+                          <div className="ds-workout-tip">
+                            <span className="ds-workout-tip-icon" aria-hidden>💡</span>
+                            <p className="ds-workout-tip-text">
+                              {exerciseById[currentWorkout.exercise_id]?.observations}
+                            </p>
+                          </div>
+                        )}
 
                         <div className="ds-workout-nav">
                           <button
@@ -1770,6 +1808,70 @@ export default function ClientePage() {
                 <p className="ds-description">{progressMetrics.motivation}</p>
               </article>
             </div>
+          </div>
+
+          <div className="ds-section-block">
+            <div className="ds-heatmap-header">
+              <button
+                type="button"
+                className="ds-heatmap-nav-btn"
+                aria-label="Mes anterior"
+                onClick={() => {
+                  const prev = new Date(heatmapCursor);
+                  prev.setMonth(prev.getMonth() - 1);
+                  setHeatmapCursor(prev);
+                }}
+              >
+                ‹
+              </button>
+              <h3 className="ds-h3 ds-heatmap-month-title">{heatmapTitle}</h3>
+              <button
+                type="button"
+                className="ds-heatmap-nav-btn"
+                aria-label="Mes siguiente"
+                onClick={() => {
+                  const next = new Date(heatmapCursor);
+                  next.setMonth(next.getMonth() + 1);
+                  setHeatmapCursor(next);
+                }}
+              >
+                ›
+              </button>
+            </div>
+
+            <div className="ds-heatmap-day-labels" aria-hidden>
+              {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
+                <span key={d}>{d}</span>
+              ))}
+            </div>
+
+            <div className="ds-heatmap-grid" role="grid" aria-label={`Actividad de ${heatmapTitle}`}>
+              {heatmapDays.map((day, idx) => {
+                if (!day) {
+                  return <div key={`blank-${idx}`} className="ds-heatmap-cell is-blank" aria-hidden />;
+                }
+                const key = localDateKey(day);
+                const isToday = key === todayDateISO;
+                const isTrained = completedDateKeys.has(key);
+                const isFuture = day > today;
+                return (
+                  <div
+                    key={key}
+                    className={`ds-heatmap-cell${isTrained ? " is-trained" : ""}${isToday ? " is-today" : ""}${isFuture ? " is-future" : ""}`}
+                    role="gridcell"
+                    aria-label={`${day.getDate()}${isTrained ? " — entrenado" : ""}`}
+                  >
+                    <span>{day.getDate()}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="ds-heatmap-summary ds-description">
+              {heatmapMonthTrainedCount > 0
+                ? `${heatmapMonthTrainedCount} entrenamiento${heatmapMonthTrainedCount !== 1 ? "s" : ""} en ${heatmapTitle}`
+                : "Aún no hay entrenamientos registrados este mes"}
+            </p>
           </div>
         </FloatingCard>
       )}
