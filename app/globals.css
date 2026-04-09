@@ -5121,7 +5121,7 @@ button.ds-carousel-arrow:active {
 
 .ds-editorial-card,
 .ds-booking-panel {
-  border: 1px solid rgba(250, 245, 232, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--ds-r-md);
   padding: var(--ds-space-2);
   display: flex;
@@ -5129,8 +5129,9 @@ button.ds-carousel-arrow:active {
   justify-content: space-between;
   align-items: center;
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.06),
-    0 8px 20px rgba(0, 0, 0, 0.08);
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 2px 6px rgba(61, 5, 26, 0.06),
+    0 8px 20px rgba(61, 5, 26, 0.08);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   width: 100%;
@@ -5138,11 +5139,11 @@ button.ds-carousel-arrow:active {
 }
 
 .ds-editorial-card {
-  background: linear-gradient(180deg, rgba(177, 192, 170, 0.72) 0%, rgba(160, 178, 154, 0.78) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(250, 245, 232, 0.76) 100%);
 }
 
 .ds-booking-panel {
-  background: linear-gradient(180deg, rgba(252, 248, 238, 0.94) 0%, rgba(229, 240, 224, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(252, 248, 238, 0.96) 0%, rgba(240, 229, 210, 0.92) 100%);
 }
 
 .ds-animate-card {
