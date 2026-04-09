@@ -380,6 +380,7 @@ export default function AdminPage() {
   const [exerciseSearch, setExerciseSearch] = useState("");
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<"todas" | Category>("todas");
   const [viewClient, setViewClient] = useState("");
+  const [fichaSection, setFichaSection] = useState<"actividad" | "ficha" | "rutinas" | null>(null);
   const [clientSearch, setClientSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState<PlanType>("semanal");
   const [filterCat, setFilterCat] = useState<"todas" | Category>("todas");
@@ -1232,199 +1233,241 @@ export default function AdminPage() {
                       </button>
                     </div>
                     <div className="ds-routine-modal-body">
-                      <div className="ds-inline-panel ds-client-activity-panel">
-                        <div style={{ marginBottom: "16px" }}>
-                          <h4 className="ds-h3">Actividad reciente</h4>
-                          <p className="ds-micro">{adminSubtitleCopy.clientActivity}</p>
-                        </div>
-                        {clientActivity.linked ? (
-                          <div className="ds-activity-stats">
-                            <div className="ds-activity-stat">
-                              <span className="ds-activity-stat-value">{clientActivity.trainingsCompleted}</span>
-                              <span className="ds-activity-stat-label">Entrenamientos</span>
-                            </div>
-                            <div className="ds-activity-stat">
-                              <span className="ds-activity-stat-value">{clientActivity.liveClassesAttended}</span>
-                              <span className="ds-activity-stat-label">Clases en vivo</span>
-                            </div>
-                            <div className="ds-activity-stat">
-                              <span className="ds-activity-stat-value">{clientActivity.videosViewed}</span>
-                              <span className="ds-activity-stat-label">Videos vistos</span>
-                            </div>
-                            <div className="ds-activity-stat">
-                              <span className="ds-activity-stat-value" style={{ fontSize: "1rem", marginTop: "2px" }}>{daysSinceText(clientActivity.lastTrainingDate)}</span>
-                              <span className="ds-activity-stat-label">Última actividad</span>
-                            </div>
+
+                      {/* ── Actividad reciente ── */}
+                      <div className="ds-ficha-accordion">
+                        <button
+                          type="button"
+                          className={`ds-ficha-accordion-row ${fichaSection === "actividad" ? "is-open" : ""}`}
+                          onClick={() => setFichaSection(fichaSection === "actividad" ? null : "actividad")}
+                        >
+                          <span className="ds-ficha-accordion-icon" aria-hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M4 19h16" /><path d="M7 16V10" /><path d="M12 16V6" /><path d="M17 16v-4" />
+                            </svg>
+                          </span>
+                          <span className="ds-ficha-accordion-label">Actividad reciente</span>
+                          <span className="ds-ficha-accordion-chevron" aria-hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </span>
+                        </button>
+                        {fichaSection === "actividad" && (
+                          <div className="ds-ficha-accordion-body ds-client-activity-panel">
+                            {clientActivity.linked ? (
+                              <div className="ds-activity-stats">
+                                <div className="ds-activity-stat">
+                                  <span className="ds-activity-stat-value">{clientActivity.trainingsCompleted}</span>
+                                  <span className="ds-activity-stat-label">Entrenamientos</span>
+                                </div>
+                                <div className="ds-activity-stat">
+                                  <span className="ds-activity-stat-value">{clientActivity.liveClassesAttended}</span>
+                                  <span className="ds-activity-stat-label">Clases en vivo</span>
+                                </div>
+                                <div className="ds-activity-stat">
+                                  <span className="ds-activity-stat-value">{clientActivity.videosViewed}</span>
+                                  <span className="ds-activity-stat-label">Videos vistos</span>
+                                </div>
+                                <div className="ds-activity-stat">
+                                  <span className="ds-activity-stat-value" style={{ fontSize: "1rem", marginTop: "2px" }}>{daysSinceText(clientActivity.lastTrainingDate)}</span>
+                                  <span className="ds-activity-stat-label">Última actividad</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="ds-description">
+                                Este cliente todavía no tiene una cuenta vinculada, por eso aún no vemos actividad registrada.
+                              </p>
+                            )}
                           </div>
-                        ) : (
-                          <p className="ds-description">
-                            Este cliente todavia no tiene una cuenta vinculada, por eso aun no vemos actividad registrada.
-                          </p>
                         )}
                       </div>
-                      <div className="ds-inline-panel ds-stack-md ds-client-ficha-panel">
-                        <h4 className="ds-h3">Ficha del cliente</h4>
-                        <div className="ds-grid-2">
-                          <label className="ds-field">
-                            <span className="ds-field-label">Objetivos</span>
-                            <textarea
-                              className="ds-input"
-                              value={clientFichaDrafts[currentClient.id]?.goals ?? ""}
-                              onChange={(event) =>
-                                setClientFichaDrafts((current) => ({
-                                  ...current,
-                                  [currentClient.id]: {
-                                    goals: event.target.value,
-                                    attentionNotes: current[currentClient.id]?.attentionNotes ?? "",
-                                  },
-                                }))
-                              }
-                              rows={4}
-                              placeholder="Ej. Mejorar postura y ganar fuerza de brazos"
-                            />
-                          </label>
-                          <label className="ds-field">
-                            <span className="ds-field-label">Puntos a cuidar</span>
-                            <textarea
-                              className="ds-input"
-                              value={clientFichaDrafts[currentClient.id]?.attentionNotes ?? ""}
-                              onChange={(event) =>
-                                setClientFichaDrafts((current) => ({
-                                  ...current,
-                                  [currentClient.id]: {
-                                    goals: current[currentClient.id]?.goals ?? "",
-                                    attentionNotes: event.target.value,
-                                  },
-                                }))
-                              }
-                              rows={4}
-                              placeholder="Ej. Molestia en hombro derecho y evitar impacto"
-                            />
-                          </label>
-                        </div>
-                        <div className="ds-client-expanded-actions">
-                          <PrimaryButton onClick={() => saveClientFicha(currentClient.id)}>
-                            {adminActionCopy.saveFicha}
-                          </PrimaryButton>
-                        </div>
-                      </div>
-                      <div className="ds-grid-3">
-                        <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
-                          <option value="semanal">Semanal</option>
-                          <option value="mensual">Mensual</option>
-                        </SelectField>
-                        <SelectField label="Categoría" value={filterCat} onChange={(value) => setFilterCat(value as "todas" | Category)}>
-                          <option value="todas">Fuerza y movilidad</option>
-                          <option value="fuerza">Fuerza</option>
-                          <option value="movilidad">Movilidad</option>
-                        </SelectField>
-                        <SelectField label="Periodo" value={filterDateMode} onChange={(value) => setFilterDateMode(value as "todas" | "dia" | "rango")}>
-                          <option value="todas">Todas las fechas</option>
-                          <option value="dia">Solo un dia</option>
-                          <option value="rango">Rango de dias</option>
-                        </SelectField>
-                      </div>
-                      {filterDateMode === "dia" && (
-                        <div className="ds-grid-2">
-                          <TextField
-                            label="Fecha"
-                            value={filterDateSingle}
-                            onChange={setFilterDateSingle}
-                            type="date"
-                          />
-                        </div>
-                      )}
-                      {filterDateMode === "rango" && (
-                        <div className="ds-grid-2">
-                          <TextField
-                            label="Desde"
-                            value={filterDateFrom}
-                            onChange={setFilterDateFrom}
-                            type="date"
-                          />
-                          <TextField
-                            label="Hasta"
-                            value={filterDateTo}
-                            onChange={setFilterDateTo}
-                            type="date"
-                          />
-                        </div>
-                      )}
-                      {clientRoutines.length > 0 && (
-                        <div className="ds-admin-bulk-bar">
-                          <div className="ds-admin-bulk-copy">
-                            <span className="ds-admin-bulk-count">{selectedRoutineIds.length}</span>
-                            <span>
-                              {selectedRoutineIds.length === 1
-                                ? "rutina seleccionada"
-                                : "rutinas seleccionadas"}
-                            </span>
-                          </div>
-                          <div className="ds-admin-bulk-actions">
-                            <GhostButton
-                              className="ds-admin-bulk-btn"
-                              onClick={() =>
-                                setSelectedRoutineIds((current) => {
-                                  const visibleIds = clientRoutines.map((routine) => routine.id);
-                                  const allSelected = visibleIds.every((id) => current.includes(id));
-                                  if (allSelected) {
-                                    return current.filter((id) => !visibleIds.includes(id));
+
+                      {/* ── Ficha del cliente ── */}
+                      <div className="ds-ficha-accordion">
+                        <button
+                          type="button"
+                          className={`ds-ficha-accordion-row ${fichaSection === "ficha" ? "is-open" : ""}`}
+                          onClick={() => setFichaSection(fichaSection === "ficha" ? null : "ficha")}
+                        >
+                          <span className="ds-ficha-accordion-icon" aria-hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9 12h6M9 16h6M7 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
+                              <rect x="9" y="2" width="6" height="4" rx="1" />
+                            </svg>
+                          </span>
+                          <span className="ds-ficha-accordion-label">Ficha del cliente</span>
+                          <span className="ds-ficha-accordion-chevron" aria-hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </span>
+                        </button>
+                        {fichaSection === "ficha" && (
+                          <div className="ds-ficha-accordion-body ds-client-ficha-panel">
+                            <div className="ds-grid-2">
+                              <label className="ds-field">
+                                <span className="ds-field-label">Objetivos</span>
+                                <textarea
+                                  className="ds-input"
+                                  value={clientFichaDrafts[currentClient.id]?.goals ?? ""}
+                                  onChange={(event) =>
+                                    setClientFichaDrafts((current) => ({
+                                      ...current,
+                                      [currentClient.id]: {
+                                        goals: event.target.value,
+                                        attentionNotes: current[currentClient.id]?.attentionNotes ?? "",
+                                      },
+                                    }))
                                   }
-                                  return Array.from(new Set([...current, ...visibleIds]));
-                                })
-                              }
-                            >
-                              {clientRoutines.every((routine) => selectedRoutineIds.includes(routine.id))
-                                ? adminActionCopy.clearSelection
-                                : adminActionCopy.selectVisible}
-                            </GhostButton>
-                            <SecondaryButton className="ds-admin-bulk-btn" onClick={deleteSelectedRoutines}>
-                              {adminActionCopy.removeSelected} ({selectedRoutineIds.length})
-                            </SecondaryButton>
-                          </div>
-                        </div>
-                      )}
-                      {clientRoutines.map((routine) => (
-                        <EditorialWorkoutCard
-                          key={routine.id}
-                          title={`${exerciseName(routine.exercise_id)} - ${routine.series} series x ${routine.repetitions} reps`}
-                          meta={`${routine.routine_date ?? routine.day} / ${routine.category}`}
-                          rightSlot={
-                            <label className="ds-admin-check" aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}>
-                              <input
-                                type="checkbox"
-                                checked={selectedRoutineIds.includes(routine.id)}
-                                onChange={(event) => {
-                                  if (event.target.checked) {
-                                    setSelectedRoutineIds((current) => [...current, routine.id]);
-                                    return;
+                                  rows={4}
+                                  placeholder="Ej. Mejorar postura y ganar fuerza de brazos"
+                                />
+                              </label>
+                              <label className="ds-field">
+                                <span className="ds-field-label">Puntos a cuidar</span>
+                                <textarea
+                                  className="ds-input"
+                                  value={clientFichaDrafts[currentClient.id]?.attentionNotes ?? ""}
+                                  onChange={(event) =>
+                                    setClientFichaDrafts((current) => ({
+                                      ...current,
+                                      [currentClient.id]: {
+                                        goals: current[currentClient.id]?.goals ?? "",
+                                        attentionNotes: event.target.value,
+                                      },
+                                    }))
                                   }
-                                  setSelectedRoutineIds((current) =>
-                                    current.filter((id) => id !== routine.id),
-                                  );
-                                }}
-                              />
-                              <span className="ds-admin-check-ui" aria-hidden="true">
-                                <svg viewBox="0 0 16 16" fill="none">
-                                  <path
-                                    d="M3.5 8.3 6.4 11 12.5 4.9"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              </span>
-                            </label>
-                          }
-                        />
-                      ))}
-                      {clientRoutines.length === 0 && (
-                        <div className="ds-admin-empty-state">
-                          <strong>{adminEmptyCopy.routines.title}</strong>
-                          <p>{adminEmptyCopy.routines.description}</p>
-                        </div>
-                      )}
+                                  rows={4}
+                                  placeholder="Ej. Molestia en hombro derecho y evitar impacto"
+                                />
+                              </label>
+                            </div>
+                            <div className="ds-client-expanded-actions" style={{ marginTop: "16px" }}>
+                              <PrimaryButton onClick={() => saveClientFicha(currentClient.id)}>
+                                {adminActionCopy.saveFicha}
+                              </PrimaryButton>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ── Rutinas ── */}
+                      <div className="ds-ficha-accordion">
+                        <button
+                          type="button"
+                          className={`ds-ficha-accordion-row ${fichaSection === "rutinas" ? "is-open" : ""}`}
+                          onClick={() => setFichaSection(fichaSection === "rutinas" ? null : "rutinas")}
+                        >
+                          <span className="ds-ficha-accordion-icon" aria-hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3.5 9.5v5" /><path d="M5.5 8v8" /><path d="M8 10v4" />
+                              <path d="M16 10v4" /><path d="M18.5 8v8" /><path d="M20.5 9.5v5" /><path d="M8 12h8" />
+                            </svg>
+                          </span>
+                          <span className="ds-ficha-accordion-label">Rutinas asignadas</span>
+                          <span className="ds-ficha-accordion-chevron" aria-hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </span>
+                        </button>
+                        {fichaSection === "rutinas" && (
+                          <div className="ds-ficha-accordion-body">
+                            <div className="ds-grid-3" style={{ marginBottom: "16px" }}>
+                              <SelectField label="Plan" value={filterPlan} onChange={(value) => setFilterPlan(value as PlanType)}>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensual">Mensual</option>
+                              </SelectField>
+                              <SelectField label="Categoría" value={filterCat} onChange={(value) => setFilterCat(value as "todas" | Category)}>
+                                <option value="todas">Fuerza y movilidad</option>
+                                <option value="fuerza">Fuerza</option>
+                                <option value="movilidad">Movilidad</option>
+                              </SelectField>
+                              <SelectField label="Periodo" value={filterDateMode} onChange={(value) => setFilterDateMode(value as "todas" | "dia" | "rango")}>
+                                <option value="todas">Todas las fechas</option>
+                                <option value="dia">Solo un día</option>
+                                <option value="rango">Rango de días</option>
+                              </SelectField>
+                            </div>
+                            {filterDateMode === "dia" && (
+                              <div className="ds-grid-2" style={{ marginBottom: "16px" }}>
+                                <TextField label="Fecha" value={filterDateSingle} onChange={setFilterDateSingle} type="date" />
+                              </div>
+                            )}
+                            {filterDateMode === "rango" && (
+                              <div className="ds-grid-2" style={{ marginBottom: "16px" }}>
+                                <TextField label="Desde" value={filterDateFrom} onChange={setFilterDateFrom} type="date" />
+                                <TextField label="Hasta" value={filterDateTo} onChange={setFilterDateTo} type="date" />
+                              </div>
+                            )}
+                            {clientRoutines.length > 0 && (
+                              <div className="ds-admin-bulk-bar" style={{ marginBottom: "12px" }}>
+                                <div className="ds-admin-bulk-copy">
+                                  <span className="ds-admin-bulk-count">{selectedRoutineIds.length}</span>
+                                  <span>{selectedRoutineIds.length === 1 ? "rutina seleccionada" : "rutinas seleccionadas"}</span>
+                                </div>
+                                <div className="ds-admin-bulk-actions">
+                                  <GhostButton
+                                    className="ds-admin-bulk-btn"
+                                    onClick={() =>
+                                      setSelectedRoutineIds((current) => {
+                                        const visibleIds = clientRoutines.map((routine) => routine.id);
+                                        const allSelected = visibleIds.every((id) => current.includes(id));
+                                        if (allSelected) return current.filter((id) => !visibleIds.includes(id));
+                                        return Array.from(new Set([...current, ...visibleIds]));
+                                      })
+                                    }
+                                  >
+                                    {clientRoutines.every((routine) => selectedRoutineIds.includes(routine.id))
+                                      ? adminActionCopy.clearSelection
+                                      : adminActionCopy.selectVisible}
+                                  </GhostButton>
+                                  <SecondaryButton className="ds-admin-bulk-btn" onClick={deleteSelectedRoutines}>
+                                    {adminActionCopy.removeSelected} ({selectedRoutineIds.length})
+                                  </SecondaryButton>
+                                </div>
+                              </div>
+                            )}
+                            <div className="ds-ficha-routine-list">
+                              {clientRoutines.map((routine) => (
+                                <EditorialWorkoutCard
+                                  key={routine.id}
+                                  title={`${exerciseName(routine.exercise_id)} — ${routine.series} series × ${routine.repetitions} reps`}
+                                  meta={`${routine.routine_date ?? routine.day} · ${routine.category}`}
+                                  rightSlot={
+                                    <label className="ds-admin-check" aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedRoutineIds.includes(routine.id)}
+                                        onChange={(event) => {
+                                          if (event.target.checked) {
+                                            setSelectedRoutineIds((current) => [...current, routine.id]);
+                                            return;
+                                          }
+                                          setSelectedRoutineIds((current) => current.filter((id) => id !== routine.id));
+                                        }}
+                                      />
+                                      <span className="ds-admin-check-ui" aria-hidden="true">
+                                        <svg viewBox="0 0 16 16" fill="none">
+                                          <path d="M3.5 8.3 6.4 11 12.5 4.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                      </span>
+                                    </label>
+                                  }
+                                />
+                              ))}
+                              {clientRoutines.length === 0 && (
+                                <div className="ds-admin-empty-state">
+                                  <strong>{adminEmptyCopy.routines.title}</strong>
+                                  <p>{adminEmptyCopy.routines.description}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   </div>
                 </div>
