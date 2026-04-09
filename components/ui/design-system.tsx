@@ -28,7 +28,7 @@ type SelectProps = {
 export function AppShell({
   title,
   subtitle,
-  kicker = "PrÃ¡ctica viva",
+  kicker = "Práctica viva",
   children,
 }: {
   title: string;
@@ -324,7 +324,7 @@ export function ProgressRing({
 }) {
   const percent = Math.max(0, Math.min(value, 100));
   const style = {
-    background: `conic-gradient(var(--ds-accent) ${percent * 3.6}deg, rgba(58,86,53,0.18) 0deg)`,
+    background: `conic-gradient(var(--pv-olive) ${percent * 3.6}deg, rgba(61,5,26,0.18) 0deg)`,
   };
 
   return (
