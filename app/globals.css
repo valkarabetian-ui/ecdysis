@@ -371,7 +371,7 @@ body {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #C5D070;
-  font-weight: 700;
+  font-weight: 500;
   text-shadow: none;
 }
 
@@ -380,7 +380,7 @@ body {
   font-size: var(--ds-type-h1);
   line-height: var(--ds-lh-tight);
   font-family: var(--font-open-sans);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.03em;
   color: var(--ds-text-strong);
   text-shadow: none;
@@ -393,7 +393,7 @@ body {
   font-size: var(--ds-type-h2);
   line-height: var(--ds-lh-heading);
   font-family: var(--font-open-sans), sans-serif;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.025em;
   color: var(--ds-text-strong);
   text-shadow: none;
@@ -405,7 +405,7 @@ body {
   margin: 0;
   font-size: var(--ds-type-h3);
   font-family: var(--font-open-sans), sans-serif;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -527,7 +527,7 @@ body {
   text-align: center;
   letter-spacing: 0.08em;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-month-nav {
@@ -536,7 +536,7 @@ body {
   border: 1px solid rgba(140, 15, 58, 0.35);
   background: rgba(140, 15, 58, 0.08);
   color: #B7C36A;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-month-week {
@@ -575,7 +575,7 @@ body {
   border: 1px solid rgba(140, 15, 58, 0.22);
   background: rgba(140, 15, 58, 0.08);
   color: #B7C36A;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.78rem;
 }
 
@@ -602,7 +602,7 @@ body {
   color: #B7C36A;
   font-size: 0.56rem;
   line-height: 14px;
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
 }
 
@@ -720,7 +720,7 @@ body {
 .ds-client-section-kicker {
   margin: 0;
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #E05A1A;
@@ -769,7 +769,7 @@ body {
 .ds-client-overview-label {
   margin: 0;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #E05A1A;
@@ -872,7 +872,7 @@ body {
 
 .ds-activity-stat-value {
   font-size: 1.8rem;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1;
   color: #8C0F3A;
   letter-spacing: -0.04em;
@@ -880,7 +880,7 @@ body {
 
 .ds-activity-stat-label {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: rgba(140, 15, 58, 0.54);
@@ -930,7 +930,7 @@ body {
   text-transform: uppercase;
   color: rgba(140, 15, 58, 0.78);
   background: rgba(248, 242, 228, 0.94);
-  font-weight: 700;
+  font-weight: 500;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -1059,7 +1059,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 500;
   position: relative;
   padding-left: var(--ds-space-2);
 }
@@ -1088,7 +1088,7 @@ body {
   padding: 0 28px;
   text-transform: none;
   letter-spacing: 0;
-  font-weight: 800;
+  font-weight: 500;
   font-size: 0.88rem;
   background: var(--ds-button);
   color: #FAF5E8;
@@ -1101,7 +1101,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .ds-client-list {
@@ -1249,7 +1249,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 1.7rem;
-  font-weight: 700;
+  font-weight: 500;
   overflow: hidden;
 }
 
@@ -1267,7 +1267,7 @@ body {
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.18;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: rgba(56, 61, 54, 0.96);
 }
@@ -1278,7 +1278,7 @@ body {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-client-line-actions {
@@ -1348,7 +1348,7 @@ body {
   gap: 10px;
   color: rgba(92, 8, 38, 0.92);
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .ds-admin-bulk-count {
@@ -1363,7 +1363,7 @@ body {
   border: 1px solid rgba(224, 90, 26, 0.22);
   color: #C05010;
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .ds-admin-bulk-actions {
@@ -1459,7 +1459,7 @@ body {
   gap: 7px;
   letter-spacing: 0.01em;
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 500;
   transition:
     transform 180ms ease,
     background-color 180ms ease,
@@ -1661,7 +1661,7 @@ body {
 
 .ds-admin-feedback-title {
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -1705,7 +1705,7 @@ body {
 
 .ds-admin-empty-state strong {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
@@ -1727,7 +1727,7 @@ body {
 .ds-btn-ghost.ds-encounter-action-btn {
   padding: 0 14px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   background: rgba(255, 255, 255, 0.74);
   border: 1px solid rgba(244, 235, 218, 0.8);
@@ -1781,7 +1781,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -1915,7 +1915,7 @@ body {
   background: rgba(140, 15, 58, 0.28);
   color: #E05A1A;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .ds-library-grid {
@@ -1950,7 +1950,7 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #ffffff;
@@ -2107,7 +2107,7 @@ body {
 
 .ds-progress-badge-card .ds-h3 {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
   color: #8C0F3A;
 }
 
@@ -2204,7 +2204,7 @@ body {
   flex: 0 0 auto;
   font-size: clamp(1.7rem, 3vw, 2.4rem);
   line-height: 1;
-  font-weight: 800;
+  font-weight: 500;
   color: #8C0F3A;
 }
 
@@ -2288,7 +2288,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .ds-workout-headline .ds-h1,
@@ -2404,7 +2404,7 @@ body {
   margin: 0;
   color: #5C0826;
   font-size: 1.08rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-workout-progress-stat {
@@ -2423,7 +2423,7 @@ body {
 .ds-workout-progress-stat span {
   color: rgba(140, 15, 58, 0.7);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -2431,7 +2431,7 @@ body {
 .ds-workout-progress-stat strong {
   color: #5C0826;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .ds-workout-insight-head {
@@ -2445,7 +2445,7 @@ body {
   margin: 6px 0 0;
   color: #5C0826;
   font-size: 1.25rem;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.03em;
 }
@@ -2483,7 +2483,7 @@ body {
 .ds-workout-insight-stat span {
   color: rgba(140, 15, 58, 0.7);
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -2491,7 +2491,7 @@ body {
 .ds-workout-insight-stat strong {
   color: #5C0826;
   font-size: 1.02rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .ds-workout-insight-note {
@@ -2502,7 +2502,7 @@ body {
   color: rgba(92, 8, 38, 0.86);
   font-size: 0.92rem;
   line-height: 1.4;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .ds-workout-focus-row {
@@ -2522,7 +2522,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -2590,7 +2590,7 @@ body {
   display: grid;
   place-items: center;
   font-size: 1.55rem;
-  font-weight: 800;
+  font-weight: 500;
   flex: 0 0 auto;
   box-shadow: 0 10px 22px rgba(140, 15, 58, 0.18);
 }
@@ -2615,7 +2615,7 @@ body {
   margin-top: 10px;
   color: rgba(140, 15, 58, 0.86);
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .ds-workout-category-pill {
@@ -2631,7 +2631,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .ds-workout-media-card {
@@ -2682,7 +2682,7 @@ body {
   display: inline-flex;
   align-items: center;
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -2692,7 +2692,7 @@ body {
   color: rgba(252, 248, 238, 0.94);
   font-size: 0.92rem;
   line-height: 1.3;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .ds-workout-media-placeholder {
@@ -2700,7 +2700,7 @@ body {
   display: grid;
   place-items: center;
   color: rgba(140, 15, 58, 0.72);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-workout-series-list {
@@ -2758,13 +2758,13 @@ body {
 .ds-workout-series-label,
 .ds-workout-series-reps {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-workout-series-state {
   color: rgba(140, 15, 58, 0.68);
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .ds-workout-series-reps {
@@ -2786,7 +2786,7 @@ body {
   border-radius: 999px;
   padding: 0 30px;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.01em;
   box-shadow: 0 10px 22px rgba(140, 15, 58, 0.16);
 }
@@ -3094,7 +3094,7 @@ body {
   border-radius: 999px;
   background: #E05A1A;
   color: #ece8df;
-  font-weight: 800;
+  font-weight: 500;
   font-size: 0.95rem;
   display: flex;
   justify-content: center;
@@ -3114,7 +3114,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 500;
   overflow: hidden;
 }
 
@@ -3140,7 +3140,7 @@ body {
   color: #8C0F3A;
   font-size: 1.35rem;
   line-height: 1.1;
-  font-weight: 800;
+  font-weight: 500;
   text-align: center;
 }
 
@@ -3173,7 +3173,7 @@ body {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--ds-space-1);
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
@@ -3319,7 +3319,7 @@ body {
   background: rgba(255, 255, 255, 0.72);
   color: #E05A1A;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 500;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -3668,7 +3668,7 @@ button.ds-carousel-arrow:active {
 .ds-admin-workflow-eyebrow {
   margin: 0 0 8px;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #E05A1A;
@@ -3731,14 +3731,14 @@ button.ds-carousel-arrow:active {
   background: linear-gradient(180deg, rgba(224, 90, 26, 0.16), rgba(224, 90, 26, 0.06));
   color: #E05A1A;
   font-size: 0.88rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.04em;
 }
 
 .ds-admin-workflow-section-title {
   margin: 0;
   font-size: 1.02rem;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: -0.02em;
   color: #5C0826;
 }
@@ -3794,7 +3794,7 @@ button.ds-carousel-arrow:active {
   justify-self: end;
   text-transform: none;
   letter-spacing: 0;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.9rem;
   background: linear-gradient(180deg, var(--ds-button), var(--ds-button-strong));
   color: #FAF5E8;
@@ -3948,7 +3948,7 @@ button.ds-carousel-arrow:active {
   background: transparent;
   color: rgba(250, 245, 232, 0.54);
   font-size: 0.84rem;
-  font-weight: 700;
+  font-weight: 500;
   box-shadow: none;
   transition: color 180ms ease, background 180ms ease;
 }
@@ -4078,7 +4078,7 @@ button.ds-carousel-arrow:active {
   border: 0;
   background: transparent;
   color: var(--ds-accent);
-  font-weight: 700;
+  font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 2px;
   padding: 0;
@@ -4092,7 +4092,7 @@ button.ds-carousel-arrow:active {
   border-radius: 999px;
   padding: 0 var(--ds-space-2);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 }
@@ -4123,7 +4123,7 @@ button.ds-carousel-arrow:active {
   min-height: 46px;
   padding: 10px 18px;
   font-size: 0.86rem;
-  font-weight: 700;
+  font-weight: 500;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.52),
     0 8px 18px rgba(11, 29, 18, 0.05);
@@ -4162,7 +4162,7 @@ button.ds-carousel-arrow:active {
   border-radius: var(--ds-r-pill);
   padding: 12px 20px;
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   cursor: pointer;
   min-height: 46px;
@@ -4441,7 +4441,7 @@ button.ds-carousel-arrow:active {
   color: var(--ds-text-muted-dark);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-search-inline {
@@ -4600,7 +4600,7 @@ button.ds-carousel-arrow:active {
   line-height: 0.98;
   color: rgba(248, 250, 246, 0.98);
   font-family: var(--font-open-sans);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.03em;
   text-wrap: balance;
   display: flex;
@@ -4678,7 +4678,7 @@ button.ds-carousel-arrow:active {
   color: rgba(250, 245, 232, 0.84);
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-login-field-note {
@@ -4698,7 +4698,7 @@ button.ds-carousel-arrow:active {
   border-radius: 20px;
   padding: 16px 18px;
   font-size: 1.02rem;
-  font-weight: 600;
+  font-weight: 500;
   outline: none;
   transition:
     box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -4788,7 +4788,7 @@ button.ds-carousel-arrow:active {
   color: rgba(244, 247, 240, 0.76);
   font-size: 0.86rem;
   letter-spacing: 0.01em;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0;
   text-align: right;
   cursor: pointer;
@@ -4856,7 +4856,7 @@ button.ds-carousel-arrow:active {
   border-radius: 999px;
   color: #f7f4ed;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1;
   background: linear-gradient(180deg, #E05A1A 0%, #B8440E 100%);
@@ -4934,7 +4934,7 @@ button.ds-carousel-arrow:active {
   font-size: 0.68rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .ds-login-signature span {
@@ -4972,7 +4972,7 @@ button.ds-carousel-arrow:active {
   background: rgba(245, 248, 241, 0.06);
   color: rgba(240, 244, 236, 0.7);
   font-size: 0.74rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.01em;
 }
 
@@ -5036,7 +5036,7 @@ button.ds-carousel-arrow:active {
   display: block;
   margin-bottom: 4px;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -5306,7 +5306,7 @@ button.ds-carousel-arrow:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 500;
   color: #8C0F3A;
 }
 
@@ -5414,7 +5414,7 @@ button.ds-carousel-arrow:active {
   color: #8C0F3A;
   padding: var(--ds-space-1) var(--ds-space-2);
   font-size: 0.76rem;
-  font-weight: 700;
+  font-weight: 500;
   box-shadow: var(--ds-shadow-1);
   backdrop-filter: blur(8px);
   transition: transform 180ms ease, opacity 180ms ease;
@@ -5437,7 +5437,7 @@ button.ds-carousel-arrow:active {
   color: #ffffff;
   padding: 10px 16px;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 500;
   box-shadow: 0 16px 36px rgba(109, 49, 19, 0.28);
   backdrop-filter: blur(10px);
 }
@@ -5620,7 +5620,7 @@ button.ds-carousel-arrow:active {
 .ds-ficha-accordion-label {
   flex: 1;
   font-size: 0.96rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: #5C0826 !important;
 }
@@ -5722,7 +5722,7 @@ button.ds-carousel-arrow:active {
   background: linear-gradient(180deg, #B7C36A, #e2bd1e);
   color: transparent;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -5753,7 +5753,7 @@ button.ds-carousel-arrow:active {
   color: #B7C36A;
   padding: var(--ds-space-1) var(--ds-space-2);
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 500;
   box-shadow: var(--ds-shadow-2);
   animation: ds-done-fx-in 220ms ease-out both;
 }
@@ -5864,14 +5864,14 @@ button.ds-carousel-arrow:active {
 
   .ds-pill-top {
     font-size: 0.62rem;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1;
     text-transform: capitalize;
   }
 
   .ds-pill-bottom {
     font-size: 0.98rem;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1;
     letter-spacing: 0;
     text-transform: none;
