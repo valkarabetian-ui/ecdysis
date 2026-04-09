@@ -1232,17 +1232,29 @@ export default function AdminPage() {
                       </button>
                     </div>
                     <div className="ds-routine-modal-body">
-                      <div className="ds-inline-panel ds-stack-md ds-client-activity-panel">
-                        <div>
-                        <h4 className="ds-h3">Actividad reciente</h4>
+                      <div className="ds-inline-panel ds-client-activity-panel">
+                        <div style={{ marginBottom: "16px" }}>
+                          <h4 className="ds-h3">Actividad reciente</h4>
                           <p className="ds-micro">{adminSubtitleCopy.clientActivity}</p>
                         </div>
                         {clientActivity.linked ? (
-                          <div className="ds-stack-sm">
-                            <p className="ds-description">Entrenamientos completados: {clientActivity.trainingsCompleted}</p>
-                            <p className="ds-description">Clases en vivo asistidas: {clientActivity.liveClassesAttended}</p>
-                            <p className="ds-description">Videos vistos: {clientActivity.videosViewed}</p>
-                            <p className="ds-description">Ultima actividad registrada: {daysSinceText(clientActivity.lastTrainingDate)}</p>
+                          <div className="ds-activity-stats">
+                            <div className="ds-activity-stat">
+                              <span className="ds-activity-stat-value">{clientActivity.trainingsCompleted}</span>
+                              <span className="ds-activity-stat-label">Entrenamientos</span>
+                            </div>
+                            <div className="ds-activity-stat">
+                              <span className="ds-activity-stat-value">{clientActivity.liveClassesAttended}</span>
+                              <span className="ds-activity-stat-label">Clases en vivo</span>
+                            </div>
+                            <div className="ds-activity-stat">
+                              <span className="ds-activity-stat-value">{clientActivity.videosViewed}</span>
+                              <span className="ds-activity-stat-label">Videos vistos</span>
+                            </div>
+                            <div className="ds-activity-stat">
+                              <span className="ds-activity-stat-value" style={{ fontSize: "1rem", marginTop: "2px" }}>{daysSinceText(clientActivity.lastTrainingDate)}</span>
+                              <span className="ds-activity-stat-label">Última actividad</span>
+                            </div>
                           </div>
                         ) : (
                           <p className="ds-description">
