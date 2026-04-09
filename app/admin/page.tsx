@@ -1429,41 +1429,58 @@ export default function AdminPage() {
                                 </div>
                               </div>
                             )}
-                            <div className="ds-ficha-routine-list">
-                              {clientRoutines.map((routine) => (
-                                <EditorialWorkoutCard
-                                  key={routine.id}
-                                  title={`${exerciseName(routine.exercise_id)} — ${routine.series} series × ${routine.repetitions} reps`}
-                                  meta={`${routine.routine_date ?? routine.day} · ${routine.category}`}
-                                  rightSlot={
-                                    <label className="ds-admin-check" aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}>
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedRoutineIds.includes(routine.id)}
-                                        onChange={(event) => {
-                                          if (event.target.checked) {
-                                            setSelectedRoutineIds((current) => [...current, routine.id]);
-                                            return;
-                                          }
-                                          setSelectedRoutineIds((current) => current.filter((id) => id !== routine.id));
-                                        }}
-                                      />
-                                      <span className="ds-admin-check-ui" aria-hidden="true">
-                                        <svg viewBox="0 0 16 16" fill="none">
-                                          <path d="M3.5 8.3 6.4 11 12.5 4.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                      </span>
-                                    </label>
-                                  }
-                                />
-                              ))}
-                              {clientRoutines.length === 0 && (
-                                <div className="ds-admin-empty-state">
-                                  <strong>{adminEmptyCopy.routines.title}</strong>
-                                  <p>{adminEmptyCopy.routines.description}</p>
-                                </div>
-                              )}
-                            </div>
+                            {clientRoutines.length === 0 ? (
+                              <div className="ds-admin-empty-state">
+                                <strong>{adminEmptyCopy.routines.title}</strong>
+                                <p>{adminEmptyCopy.routines.description}</p>
+                              </div>
+                            ) : (
+                              <div className="ds-ficha-table-wrap">
+                                <table className="ds-ficha-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Ejercicio</th>
+                                      <th>Series</th>
+                                      <th>Reps</th>
+                                      <th>Categoría</th>
+                                      <th>Fecha / Día</th>
+                                      <th aria-label="Seleccionar" />
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {clientRoutines.map((routine) => (
+                                      <tr key={routine.id} className={selectedRoutineIds.includes(routine.id) ? "is-selected" : ""}>
+                                        <td className="ds-ficha-table-name">{exerciseName(routine.exercise_id)}</td>
+                                        <td>{routine.series}</td>
+                                        <td>{routine.repetitions}</td>
+                                        <td className="ds-ficha-table-cat">{routine.category}</td>
+                                        <td className="ds-ficha-table-date">{routine.routine_date ?? routine.day}</td>
+                                        <td>
+                                          <label className="ds-admin-check" aria-label={`Seleccionar ${exerciseName(routine.exercise_id)}`}>
+                                            <input
+                                              type="checkbox"
+                                              checked={selectedRoutineIds.includes(routine.id)}
+                                              onChange={(event) => {
+                                                if (event.target.checked) {
+                                                  setSelectedRoutineIds((current) => [...current, routine.id]);
+                                                  return;
+                                                }
+                                                setSelectedRoutineIds((current) => current.filter((id) => id !== routine.id));
+                                              }}
+                                            />
+                                            <span className="ds-admin-check-ui" aria-hidden="true">
+                                              <svg viewBox="0 0 16 16" fill="none">
+                                                <path d="M3.5 8.3 6.4 11 12.5 4.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                              </svg>
+                                            </span>
+                                          </label>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
