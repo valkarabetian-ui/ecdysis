@@ -3835,7 +3835,9 @@ button.ds-carousel-arrow:active {
   letter-spacing: -0.04em;
   line-height: 0.98;
   max-width: none;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  text-wrap: nowrap !important;
+  overflow-wrap: normal !important;
 }
 
 .ds-admin-page-shell .ds-input,
