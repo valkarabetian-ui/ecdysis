@@ -5461,7 +5461,7 @@ button.ds-carousel-arrow:active {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   padding: 20px;
   overflow: hidden;
@@ -5497,8 +5497,8 @@ button.ds-carousel-arrow:active {
 .ds-routine-modal-panel {
   width: min(1020px, 94vw);
   max-width: 100%;
-  align-self: center;
-  max-height: calc(100vh - 40px);
+  height: calc(100vh - 40px);
+  max-height: 960px;
   padding: 0;
   overflow: hidden;
   border-radius: 28px;
