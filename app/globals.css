@@ -3831,10 +3831,11 @@ button.ds-carousel-arrow:active {
   margin: 0 0 var(--ds-space-2);
   color: #FAF5E8;
   text-shadow: none;
-  font-size: clamp(2.1rem, 3.6vw, 3rem);
+  font-size: clamp(1.6rem, 3.6vw, 3rem);
   letter-spacing: -0.04em;
   line-height: 0.98;
-  max-width: 12ch;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .ds-admin-page-shell .ds-input,
