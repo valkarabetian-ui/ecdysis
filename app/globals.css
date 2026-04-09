@@ -5496,9 +5496,12 @@ button.ds-carousel-arrow:active {
 .ds-routine-modal-panel {
   width: min(1020px, 94vw);
   max-height: min(88vh, 960px);
+  height: min(88vh, 960px);
   padding: 0;
   overflow: hidden;
   border-radius: 28px;
+  display: flex;
+  flex-direction: column;
 }
 
 .ds-routine-modal-head {
@@ -5509,8 +5512,7 @@ button.ds-carousel-arrow:active {
   padding: 24px 24px 20px;
   border-bottom: 1px solid rgba(140, 15, 58, 0.10);
   background: rgba(250, 245, 232, 0.96);
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 2;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -5676,14 +5678,14 @@ button.ds-carousel-arrow:active {
 }
 
 .ds-routine-modal-body {
-  padding: 20px 24px;
-  max-height: calc(86vh - 120px);
-  overflow: auto;
+  padding: 20px 24px 40px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
   background: rgba(140, 15, 58, 0.04);
-  padding-bottom: 40px;
 }
 
 .ds-routine-modal-body > .ds-card,
