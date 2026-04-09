@@ -5755,6 +5755,23 @@ button.ds-carousel-arrow:active {
   gap: 10px;
   background: rgba(140, 15, 58, 0.04);
   border-radius: 0 0 28px 28px;
+  color: #3D051A;
+}
+
+.ds-routine-modal-body p,
+.ds-routine-modal-body span:not([class*="icon"]):not([class*="check"]):not([class*="count"]):not([class*="dot"]),
+.ds-routine-modal-body td,
+.ds-routine-modal-body th,
+.ds-routine-modal-body label,
+.ds-routine-modal-body h3,
+.ds-routine-modal-body h4,
+.ds-routine-modal-body .ds-h3,
+.ds-routine-modal-body .ds-description,
+.ds-routine-modal-body .ds-micro,
+.ds-routine-modal-body .ds-field-label,
+.ds-routine-modal-body .ds-ficha-accordion-label,
+.ds-routine-modal-body .ds-admin-bulk-copy {
+  color: #3D051A !important;
 }
 
 .ds-routine-modal-body > .ds-card,
