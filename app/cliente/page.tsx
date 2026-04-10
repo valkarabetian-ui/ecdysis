@@ -1,4 +1,3 @@
-﻿
 "use client";
 
 import { ChangeEvent, TouchEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -264,7 +263,8 @@ export default function ClientePage() {
     setError("");
     setClientLinkWarning("");
 
-    const { data: authData } = await supabase.auth.getUser();
+    try {
+      const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) {
       router.push("/login");
       return;
@@ -447,6 +447,12 @@ export default function ClientePage() {
     setCompletedToday(Boolean(todayCompletionQ.data));
 
     setLoading(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error inesperado al cargar datos";
+      setError(message);
+      setLoading(false);
+      console.error("Error in loadData:", error);
+    }
   }, [router, todayDateISO]);
 
   useEffect(() => {
@@ -1438,11 +1444,11 @@ export default function ClientePage() {
               <div
                 className="rounded-[20px] border p-4"
                 style={{
-                  borderColor: "var(--ds-border)",
+                  borderColor: "rgba(140,15,58,.32)",
                   boxShadow: "var(--ds-shadow-2)",
-                  color: "#f4e2d0",
+                  color: "#FAF5E8",
                   background:
-                    "linear-gradient(165deg, rgba(58,86,53,.92), rgba(58,86,53,.78), rgba(213,123,14,.84))",
+                    "linear-gradient(165deg, rgba(61,5,26,.97), rgba(140,15,58,.90), rgba(92,8,38,.94))",
                 }}
               >
                 <div
@@ -1457,9 +1463,9 @@ export default function ClientePage() {
                     }
                     className="h-9 rounded-full border text-sm font-bold"
                     style={{
-                      borderColor: "rgba(244,226,208,.35)",
-                      background: "rgba(244,226,208,.08)",
-                      color: "#f4e2d0",
+                      borderColor: "rgba(140,15,58,.40)",
+                      background: "rgba(140,15,58,.18)",
+                      color: "#FAF5E8",
                     }}
                   >
                     {"<"}
@@ -1475,9 +1481,9 @@ export default function ClientePage() {
                     }
                     className="h-9 rounded-full border text-sm font-bold"
                     style={{
-                      borderColor: "rgba(244,226,208,.35)",
-                      background: "rgba(244,226,208,.08)",
-                      color: "#f4e2d0",
+                      borderColor: "rgba(140,15,58,.40)",
+                      background: "rgba(140,15,58,.18)",
+                      color: "#FAF5E8",
                     }}
                   >
                     {">"}
@@ -1522,15 +1528,15 @@ export default function ClientePage() {
                           style={
                             isToday
                               ? {
-                                  borderColor: "#f4e2d0",
-                                  background: "#f4e2d0",
-                                  color: "var(--ds-accent)",
+                                  borderColor: "#FAF5E8",
+                                  background: "linear-gradient(135deg, #FAF5E8, #F0E5D0)",
+                                  color: "#8C0F3A",
                                 }
                               : {
-                                  borderColor: "rgba(244,226,208,.22)",
-                                  background: "rgba(244,226,208,.08)",
-                                  color: "#f4e2d0",
-                                  opacity: 0.75,
+                                  borderColor: "rgba(250,245,232,.20)",
+                                  background: "rgba(140,15,58,.18)",
+                                  color: "#FAF5E8",
+                                  opacity: 0.78,
                                 }
                           }
                         >
@@ -1549,8 +1555,9 @@ export default function ClientePage() {
                 <div
                   className="ds-month-footer mt-4 rounded-[14px] border px-3 py-2"
                   style={{
-                    borderColor: "rgba(244,226,208,.22)",
-                    background: "rgba(244,226,208,.1)",
+                    borderColor: "rgba(140,15,58,.36)",
+                    background: "rgba(140,15,58,.22)",
+                    color: "#FAF5E8",
                   }}
                 >
                   <p className="ds-micro">
@@ -1650,7 +1657,7 @@ export default function ClientePage() {
                     loading="lazy"
                   />
                   <div className="ds-library-category-content">
-                    <h4 className="ds-h3 ds-library-category-title" style={{ color: "#3f6343" }}>Yoga & meditación</h4>
+                    <h4 className="ds-h3 ds-library-category-title" style={{ color: "#5C0826" }}>Yoga & meditación</h4>
                     <p className="ds-micro">{recordedYoga.length} clases</p>
                     <GhostButton
                       onClick={() =>
@@ -1670,7 +1677,7 @@ export default function ClientePage() {
                     loading="lazy"
                   />
                   <div className="ds-library-category-content">
-                    <h4 className="ds-h3 ds-library-category-title" style={{ color: "#3f6343" }}>Fuerza & movilidad</h4>
+                    <h4 className="ds-h3 ds-library-category-title" style={{ color: "#5C0826" }}>Fuerza & movilidad</h4>
                     <p className="ds-micro">{recordedFuerza.length} clases</p>
                     <GhostButton
                       onClick={() =>
@@ -1810,76 +1817,13 @@ export default function ClientePage() {
             </div>
           </div>
 
-          <div className="ds-section-block">
-            <div className="ds-heatmap-header">
-              <button
-                type="button"
-                className="ds-heatmap-nav-btn"
-                aria-label="Mes anterior"
-                onClick={() => {
-                  const prev = new Date(heatmapCursor);
-                  prev.setMonth(prev.getMonth() - 1);
-                  setHeatmapCursor(prev);
-                }}
-              >
-                ‹
-              </button>
-              <h3 className="ds-h3 ds-heatmap-month-title">{heatmapTitle}</h3>
-              <button
-                type="button"
-                className="ds-heatmap-nav-btn"
-                aria-label="Mes siguiente"
-                onClick={() => {
-                  const next = new Date(heatmapCursor);
-                  next.setMonth(next.getMonth() + 1);
-                  setHeatmapCursor(next);
-                }}
-              >
-                ›
-              </button>
-            </div>
-
-            <div className="ds-heatmap-day-labels" aria-hidden>
-              {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
-                <span key={d}>{d}</span>
-              ))}
-            </div>
-
-            <div className="ds-heatmap-grid" role="grid" aria-label={`Actividad de ${heatmapTitle}`}>
-              {heatmapDays.map((day, idx) => {
-                if (!day) {
-                  return <div key={`blank-${idx}`} className="ds-heatmap-cell is-blank" aria-hidden />;
-                }
-                const key = localDateKey(day);
-                const isToday = key === todayDateISO;
-                const isTrained = completedDateKeys.has(key);
-                const isFuture = day > today;
-                return (
-                  <div
-                    key={key}
-                    className={`ds-heatmap-cell${isTrained ? " is-trained" : ""}${isToday ? " is-today" : ""}${isFuture ? " is-future" : ""}`}
-                    role="gridcell"
-                    aria-label={`${day.getDate()}${isTrained ? " — entrenado" : ""}`}
-                  >
-                    <span>{day.getDate()}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className="ds-heatmap-summary ds-description">
-              {heatmapMonthTrainedCount > 0
-                ? `${heatmapMonthTrainedCount} entrenamiento${heatmapMonthTrainedCount !== 1 ? "s" : ""} en ${heatmapTitle}`
-                : "Aún no hay entrenamientos registrados este mes"}
-            </p>
-          </div>
         </FloatingCard>
       )}
 
       {tab === "perfil" && (
         <FloatingCard title="Perfil" className="ds-profile-shell">
           <div className="ds-profile-stack">
-            <article className="ds-profile-card ds-profile-hero-card">
+            <article className="ds-profile-hero-card">
               <div className="ds-profile-hero">
                 <div className="ds-profile-avatar-wrap">
                   <input
@@ -1934,7 +1878,7 @@ export default function ClientePage() {
                 </button>
               </div>
               {showPasswordChange && (
-                <div className="ds-stack-md">
+                <div className="ds-stack-md ds-profile-form-area">
                   <TextField label="Nueva contraseña" value={newPassword} onChange={setNewPassword} type="password" />
                   <div className="ds-pill-row">
                     <PrimaryButton onClick={changePassword} disabled={passwordChanging}>
@@ -1956,7 +1900,7 @@ export default function ClientePage() {
                 Cerrar sesión
               </PrimaryButton>
             </article>
-            <article className="ds-profile-card ds-profile-notes-card">
+            <article className="ds-profile-notes-card">
               <h3 className="ds-h3">Mi ficha</h3>
               <div className="ds-profile-row">
                 <p className="ds-micro">Objetivos</p>

@@ -1,4 +1,3 @@
-﻿
 "use client";
 
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -455,49 +454,61 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
 
-    const [clientsQ, exercisesQ, routinesQ, templatesQ, templateItemsQ, recordedQ, liveQ, yogaQ, welcomeQ, activityRes] = await Promise.all([
-      supabase.from("clients").select("*").order("created_at", { ascending: false }),
-      supabase.from("exercises").select("*").order("created_at", { ascending: false }),
-      supabase.from("routines").select("*").order("created_at", { ascending: false }),
-      supabase.from("routine_templates").select("*").order("created_at", { ascending: false }),
-      supabase.from("routine_template_items").select("*").order("created_at", { ascending: false }),
-      supabase.from("recorded_classes").select("*").order("created_at", { ascending: false }),
-      supabase.from("live_classes").select("*").order("class_datetime", { ascending: true }),
-      supabase.from("personalized_yoga").select("*").order("created_at", { ascending: false }),
-      supabase.from("welcome_videos").select("*").order("created_at", { ascending: false }),
-      fetch("/api/admin/client-activity"),
-    ]);
+    try {
+      let activityRes: Response | null = null;
+      try {
+        activityRes = await fetch("/api/admin/client-activity");
+      } catch {
+        // If fetch fails, create a dummy response
+        activityRes = new Response(JSON.stringify({ activityByClientId: {} }), { status: 200 });
+      }
 
-    const queryErrors = [clientsQ.error, exercisesQ.error, routinesQ.error, templatesQ.error, templateItemsQ.error, recordedQ.error, liveQ.error, yogaQ.error, welcomeQ.error].filter(Boolean);
-    if (queryErrors.length > 0) {
-      setError(queryErrors[0]?.message ?? "Error cargando datos.");
+      const [clientsQ, exercisesQ, routinesQ, templatesQ, templateItemsQ, recordedQ, liveQ, yogaQ, welcomeQ] = await Promise.all([
+        supabase.from("clients").select("*").order("created_at", { ascending: false }),
+        supabase.from("exercises").select("*").order("created_at", { ascending: false }),
+        supabase.from("routines").select("*").order("created_at", { ascending: false }),
+        supabase.from("routine_templates").select("*").order("created_at", { ascending: false }),
+        supabase.from("routine_template_items").select("*").order("created_at", { ascending: false }),
+        supabase.from("recorded_classes").select("*").order("created_at", { ascending: false }),
+        supabase.from("live_classes").select("*").order("class_datetime", { ascending: true }),
+        supabase.from("personalized_yoga").select("*").order("created_at", { ascending: false }),
+        supabase.from("welcome_videos").select("*").order("created_at", { ascending: false }),
+      ]);
+
+      const queryErrors = [clientsQ.error, exercisesQ.error, routinesQ.error, templatesQ.error, templateItemsQ.error, recordedQ.error, liveQ.error, yogaQ.error, welcomeQ.error].filter(Boolean);
+      if (queryErrors.length > 0) {
+        setError(queryErrors[0]?.message ?? "Error cargando datos.");
+        setLoading(false);
+        return;
+      }
+
+      const templatesWithItems: Template[] = (templatesQ.data ?? []).map((template) => ({
+        ...template,
+        items: (templateItemsQ.data ?? []).filter((item) => item.template_id === template.id),
+      }));
+
+      setClients((clientsQ.data as Client[]) ?? []);
+      setExercises((exercisesQ.data as Exercise[]) ?? []);
+      setRoutines((routinesQ.data as Routine[]) ?? []);
+      setTemplates(templatesWithItems);
+      setRecorded((recordedQ.data as RecordedClass[]) ?? []);
+      setLive((liveQ.data as LiveClass[]) ?? []);
+      setWelcome((welcomeQ.data as WelcomeVideo[]) ?? []);
+
+      if (activityRes && activityRes.ok) {
+        const activityPayload = (await activityRes.json()) as {
+          activityByClientId?: Record<string, ClientActivitySummary>;
+        };
+        setClientActivityById(activityPayload.activityByClientId ?? {});
+      } else {
+        setClientActivityById({});
+      }
+
       setLoading(false);
-      return;
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Error inesperado.");
+      setLoading(false);
     }
-
-    const templatesWithItems: Template[] = (templatesQ.data ?? []).map((template) => ({
-      ...template,
-      items: (templateItemsQ.data ?? []).filter((item) => item.template_id === template.id),
-    }));
-
-    setClients((clientsQ.data as Client[]) ?? []);
-    setExercises((exercisesQ.data as Exercise[]) ?? []);
-    setRoutines((routinesQ.data as Routine[]) ?? []);
-    setTemplates(templatesWithItems);
-    setRecorded((recordedQ.data as RecordedClass[]) ?? []);
-    setLive((liveQ.data as LiveClass[]) ?? []);
-    setWelcome((welcomeQ.data as WelcomeVideo[]) ?? []);
-
-    if (activityRes.ok) {
-      const activityPayload = (await activityRes.json()) as {
-        activityByClientId?: Record<string, ClientActivitySummary>;
-      };
-      setClientActivityById(activityPayload.activityByClientId ?? {});
-    } else {
-      setClientActivityById({});
-    }
-
-    setLoading(false);
   };
 
   useEffect(() => {

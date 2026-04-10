@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { ReactNode } from "react";
 
 type ButtonProps = {
@@ -425,4 +425,3 @@ export function StickyBottomCTA({
     </div>
   );
 }
-
