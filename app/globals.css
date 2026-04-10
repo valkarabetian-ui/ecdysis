@@ -447,7 +447,8 @@ body {
   height: auto;
   width: clamp(220px, 50vw, 320px);
   object-fit: contain;
-  margin: 0;
+  margin: 0 auto;
+  display: block;
 }
 
 .ds-hero .ds-subtitle {
