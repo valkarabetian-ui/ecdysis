@@ -1,5 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
+
+function StrokeIcon({
+  children,
+  strokeWidth = 1.9,
+}: {
+  children: ReactNode;
+  strokeWidth?: number;
+}) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
 
 type ButtonProps = {
   children: ReactNode;
@@ -29,14 +44,16 @@ export function AppShell({
   title,
   subtitle,
   kicker = "Práctica viva",
+  logoSrc,
   children,
 }: {
   title: string;
   subtitle?: string;
   kicker?: string;
+  logoSrc?: string;
   children: ReactNode;
 }) {
-  const hasHero = Boolean(kicker || title || subtitle);
+  const hasHero = Boolean(kicker || title || subtitle || logoSrc);
 
   return (
     <div className="ds-page">
@@ -45,7 +62,11 @@ export function AppShell({
           <div className="ds-hero-overlay" />
           <div className="ds-hero-content">
             {kicker && <p className="ds-kicker">{kicker}</p>}
-            {title && <h1 className="ds-h1">{title}</h1>}
+            {logoSrc ? (
+              <Image src={logoSrc} alt="Práctica Viva" width={220} height={28} className="ds-hero-logo" priority />
+            ) : (
+              title && <h1 className="ds-h1">{title}</h1>
+            )}
             {subtitle && <p className="ds-subtitle">{subtitle}</p>}
           </div>
         </section>
@@ -351,34 +372,13 @@ export function BottomNavigation({
 
     switch (item.id) {
       case "inicio":
-        return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5.5 9.5V20h13V9.5" />
-          </svg>
-        );
+        return <StrokeIcon><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V20h13V9.5" /></StrokeIcon>;
       case "biblioteca":
-        return (
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M8 6.8c0-1.04 1.13-1.69 2.03-1.16l7.08 4.2c.88.52.88 1.8 0 2.32l-7.08 4.2A1.35 1.35 0 0 1 8 15.24z" />
-          </svg>
-        );
+        return <StrokeIcon><path d="M8 6.75v10.5" /><path d="M8 6.75c0-1 1.1-1.63 1.97-1.12l8.22 4.74a1.3 1.3 0 0 1 0 2.26l-8.22 4.74A1.3 1.3 0 0 1 8 16.25" /></StrokeIcon>;
       case "progreso":
-        return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19h16" />
-            <path d="M7 16V10" />
-            <path d="M12 16V6" />
-            <path d="M17 16v-4" />
-          </svg>
-        );
+        return <StrokeIcon><path d="M4 19h16" /><path d="M7 16V10" /><path d="M12 16V6" /><path d="M17 16v-4" /></StrokeIcon>;
       case "perfil":
-        return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="3.5" />
-            <path d="M5 20a7 7 0 0 1 14 0" />
-          </svg>
-        );
+        return <StrokeIcon><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></StrokeIcon>;
       default:
         return null;
     }

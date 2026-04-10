@@ -1097,7 +1097,8 @@ export default function ClientePage() {
     return (
       <AppShell
         kicker=""
-        title="Práctica viva"
+        title=""
+        logoSrc="/logo-pv.png"
       >
         <FloatingCard title="Cargando" description="Sincronizando tu experiencia.">
           <SkeletonCard lines={3} />
@@ -1113,7 +1114,8 @@ export default function ClientePage() {
     return (
       <AppShell
         kicker=""
-        title="Práctica viva"
+        title=""
+        logoSrc="/logo-pv.png"
       >
         <FloatingCard
           title="\u00a1Hoy ya cumpliste! Muy bien."
@@ -1127,7 +1129,7 @@ export default function ClientePage() {
 
   return (
     <ProtectedRoute allowedRole="cliente">
-      <AppShell kicker="" title={showTodayWorkout && tab === "inicio" ? "" : "Práctica viva"}>
+      <AppShell kicker="" title="" logoSrc={showTodayWorkout && tab === "inicio" ? undefined : "/logo-pv.png"}>
       {(refreshing || pullDistance > 0) && (
         <div
           className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}
@@ -1139,17 +1141,18 @@ export default function ClientePage() {
         </div>
       )}
 
-      <div
-        className="ds-cliente-flow"
-        onTouchStart={onGestureStart}
-        onTouchMove={onGestureMove}
-        onTouchEnd={onGestureEnd}
-        style={{
-          transform: `translateX(${swipeOffset}px)`,
-          transition: isSwiping ? "none" : "transform 180ms ease",
-          willChange: "transform",
-        }}
-      >
+      <div className="ds-client-page-shell">
+        <div
+          className="ds-cliente-flow"
+          onTouchStart={onGestureStart}
+          onTouchMove={onGestureMove}
+          onTouchEnd={onGestureEnd}
+          style={{
+            transform: `translateX(${swipeOffset}px)`,
+            transition: isSwiping ? "none" : "transform 180ms ease",
+            willChange: "transform",
+          }}
+        >
       {tab === "inicio" && (
         showTodayWorkout ? (
           <section className="ds-workout-screen ds-animate-card">
@@ -1922,6 +1925,7 @@ export default function ClientePage() {
           <p className="ds-description">{clientLinkWarning}</p>
         </FloatingCard>
       )}
+        </div>
       </div>
 
       {!(tab === "inicio" && showTodayWorkout) && (
