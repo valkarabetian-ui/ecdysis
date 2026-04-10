@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import {
   AppShell,
   BottomNavigation,
+  SideNavigation,
   DatePills,
   ExpandableSection,
   EditorialWorkoutCard,
@@ -1093,6 +1094,44 @@ export default function ClientePage() {
     welcomeStripRef.current.scrollBy({ left: amount, behavior: "smooth" });
   };
 
+  // Programa: last 3 platform activity items
+  const programaItems = useMemo(() => {
+    const items: { id: string; type: "live" | "recorded" | "fuerza"; title: string; date: string; meta: string }[] = [];
+
+    for (const lc of liveClasses) {
+      items.push({
+        id: `live-${lc.id}`,
+        type: "live",
+        title: lc.title,
+        date: lc.class_datetime,
+        meta: `En vivo · ${new Date(lc.class_datetime).toLocaleDateString("es-AR")}`,
+      });
+    }
+
+    for (const rc of [...recordedYoga, ...recordedFuerza]) {
+      items.push({
+        id: `rec-${rc.id}`,
+        type: "recorded",
+        title: rc.title,
+        date: rc.created_at ?? "",
+        meta: `Clase grabada · ${formatShortDate(rc.created_at)}`,
+      });
+    }
+
+    if (todayPlan.length > 0) {
+      items.push({
+        id: "fuerza-today",
+        type: "fuerza",
+        title: "Entrenamiento de fuerza",
+        date: todayDateISO,
+        meta: `Hoy · ${todayPlan.length} ejercicio(s)`,
+      });
+    }
+
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return items.slice(0, 3);
+  }, [liveClasses, recordedYoga, recordedFuerza, todayPlan, todayDateISO]);
+
   if (loading) {
     return (
       <AppShell
@@ -1355,243 +1394,190 @@ export default function ClientePage() {
             )}
           </section>
         ) : (
-          <FloatingCard
-            title={`Hola, ${name}`}
-          >
-            {!welcomeSeen && welcomeVideos.length > 0 && (
-              <div className="ds-section-block">
-                <div className="ds-welcome-carousel-shell">
-                  <button
-                    type="button"
-                    className="ds-carousel-arrow ds-carousel-arrow-left"
-                    aria-label="Ver videos anteriores"
-                    onClick={() => scrollWelcome("left")}
-                  >
-                    ←
-                  </button>
-                  <div className="ds-welcome-strip-wrap">
-                    <div ref={welcomeStripRef} className="ds-welcome-strip">
-                      {welcomeVideos.map((video) => (
-                        <div key={video.id} className="ds-welcome-preview ds-welcome-preview-compact">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getYouTubeThumbnail(video.youtube_url)}
-                            alt={`Previsualizacion de ${video.title}`}
-                            className="ds-welcome-thumb"
-                            loading="lazy"
-                          />
-                          <div className="ds-welcome-content">
-                            <h3 className="ds-h3 ds-welcome-title">{video.title}</h3>
-                            <GhostButton
-                              onClick={() =>
-                                window.open(video.youtube_url, "_blank", "noopener,noreferrer")
-                              }
-                            >
-                              Ver
-                            </GhostButton>
-                          </div>
+          <div className="ds-dashboard-grid">
+            <div className="ds-dashboard-main">
+              <FloatingCard title={`Hola, ${name}`}>
+                {!welcomeSeen && welcomeVideos.length > 0 && (
+                  <div className="ds-section-block">
+                    <div className="ds-welcome-carousel-shell">
+                      <button
+                        type="button"
+                        className="ds-carousel-arrow ds-carousel-arrow-left"
+                        aria-label="Ver videos anteriores"
+                        onClick={() => scrollWelcome("left")}
+                      >
+                        ←
+                      </button>
+                      <div className="ds-welcome-strip-wrap">
+                        <div ref={welcomeStripRef} className="ds-welcome-strip">
+                          {welcomeVideos.map((video) => (
+                            <div key={video.id} className="ds-welcome-preview ds-welcome-preview-compact">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={getYouTubeThumbnail(video.youtube_url)}
+                                alt={`Previsualizacion de ${video.title}`}
+                                className="ds-welcome-thumb"
+                                loading="lazy"
+                              />
+                              <div className="ds-welcome-content">
+                                <h3 className="ds-h3 ds-welcome-title">{video.title}</h3>
+                                <GhostButton
+                                  onClick={() =>
+                                    window.open(video.youtube_url, "_blank", "noopener,noreferrer")
+                                  }
+                                >
+                                  Ver
+                                </GhostButton>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="ds-carousel-arrow ds-carousel-arrow-right"
+                        aria-label="Ver mas videos"
+                        onClick={() => scrollWelcome("right")}
+                      >
+                        →
+                      </button>
                     </div>
+                    <PrimaryButton onClick={markWelcomeSeen}>Marcar como vistos</PrimaryButton>
                   </div>
-                  <button
-                    type="button"
-                    className="ds-carousel-arrow ds-carousel-arrow-right"
-                    aria-label="Ver mas videos"
-                    onClick={() => scrollWelcome("right")}
-                  >
-                    →
-                  </button>
-                </div>
-                <PrimaryButton onClick={markWelcomeSeen}>Marcar como vistos</PrimaryButton>
-              </div>
-            )}
-            <div className="ds-section-block">
-            <p className="ds-description">
-              Hoy te toca:{" "}
-              {todayFocus.length ? (
-                todayFocus.map((label, index) => (
-                  <span key={`${label}-${index}`}>
-                    {label === "Fuerza" ? (
-                      <button
-                        type="button"
-                        className="ds-inline-action ds-inline-action-fuerza"
-                        onClick={startTodayWorkout}
-                      >
-                        {label}
-                      </button>
-                    ) : label === "Clase en vivo" && todayLiveClass ? (
-                      <button
-                        type="button"
-                        className="ds-inline-action ds-inline-live-action"
-                        onClick={() => joinLiveClass(todayLiveClass)}
-                      >
-                        Clase en vivo
-                      </button>
+                )}
+                <div className="ds-section-block">
+                  <p className="ds-description">
+                    Hoy te toca:{" "}
+                    {todayFocus.length ? (
+                      todayFocus.map((label, index) => (
+                        <span key={`${label}-${index}`}>
+                          {label === "Fuerza" ? (
+                            <button
+                              type="button"
+                              className="ds-inline-action ds-inline-action-fuerza"
+                              onClick={startTodayWorkout}
+                            >
+                              {label}
+                            </button>
+                          ) : label === "Clase en vivo" && todayLiveClass ? (
+                            <button
+                              type="button"
+                              className="ds-inline-action ds-inline-live-action"
+                              onClick={() => joinLiveClass(todayLiveClass)}
+                            >
+                              Clase en vivo
+                            </button>
+                          ) : (
+                            <span>{label}</span>
+                          )}
+                          {index < todayFocus.length - 1 ? " + " : ""}
+                        </span>
+                      ))
                     ) : (
-                      <span>{label}</span>
+                      "Sin asignaciones para hoy"
                     )}
-                    {index < todayFocus.length - 1 ? " + " : ""}
-                  </span>
-                ))
-              ) : (
-                "Sin asignaciones para hoy"
-              )}
-            </p>
-            <DatePills days={week} current={todayName} labels={weekLabels} />
-            <GhostButton onClick={() => setShowMonth((current) => !current)}>
-                {showMonth ? "Minimizar calendario" : "Abrir calendario mensual"}
-              </GhostButton>
+                  </p>
+                  <DatePills days={week} current={todayName} labels={weekLabels} />
+                </div>
+              </FloatingCard>
 
-            <ExpandableSection open={showMonth}>
-              <div
-                className="rounded-[20px] border p-4"
-                style={{
-                  borderColor: "rgba(140,15,58,.32)",
-                  boxShadow: "var(--ds-shadow-2)",
-                  color: "#FAF5E8",
-                  background:
-                    "linear-gradient(165deg, rgba(61,5,26,.97), rgba(140,15,58,.90), rgba(92,8,38,.94))",
-                }}
-              >
-                <div
-                  className="mb-2 grid items-center gap-2"
-                  style={{ gridTemplateColumns: "40px 1fr 40px" }}
-                >
+              {!completedToday && (
+                <FloatingCard>
+                  <h3 className="ds-h3">Entrenamiento de hoy</h3>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/workout-hero.jpeg"
+                    alt="Entrenamiento"
+                    className="ds-workout-hero-img"
+                  />
+                  <p className="ds-description">
+                    {todayPlan.length > 0
+                      ? "¿Estás listo?"
+                      : "Hoy no tenes rutina asignada."}
+                  </p>
+                  <PrimaryButton
+                    onClick={startTodayWorkout}
+                    disabled={todayPlan.length === 0}
+                  >
+                    ¡Empecemos!
+                  </PrimaryButton>
+                </FloatingCard>
+              )}
+            </div>
+
+            <aside className="ds-dashboard-sidebar">
+              <div className="ds-sidebar-calendar">
+                <div className="ds-sidebar-calendar-head">
                   <button
+                    className="ds-sidebar-calendar-nav"
                     onClick={() =>
                       setMonthCursor(
                         (date) => new Date(date.getFullYear(), date.getMonth() - 1, 1),
                       )
                     }
-                    className="h-9 rounded-full border text-sm font-bold"
-                    style={{
-                      borderColor: "rgba(140,15,58,.40)",
-                      background: "rgba(140,15,58,.18)",
-                      color: "#FAF5E8",
-                    }}
                   >
-                    {"<"}
+                    &lt;
                   </button>
-                  <p className="m-0 text-center text-xs font-bold tracking-[0.08em]">
-                    {monthTitle}
-                  </p>
+                  <p>{monthTitle}</p>
                   <button
+                    className="ds-sidebar-calendar-nav"
                     onClick={() =>
                       setMonthCursor(
                         (date) => new Date(date.getFullYear(), date.getMonth() + 1, 1),
                       )
                     }
-                    className="h-9 rounded-full border text-sm font-bold"
-                    style={{
-                      borderColor: "rgba(140,15,58,.40)",
-                      background: "rgba(140,15,58,.18)",
-                      color: "#FAF5E8",
-                    }}
                   >
-                    {">"}
+                    &gt;
                   </button>
                 </div>
-
-                <div
-                  className="mb-1 grid gap-1 text-center text-[11px]"
-                  style={{ gridTemplateColumns: "repeat(7,minmax(0,1fr))" }}
-                >
+                <div className="ds-sidebar-calendar-weekdays">
                   {weekShort.map((day) => (
                     <span key={day}>{day}</span>
                   ))}
                 </div>
-
-                <div
-                  className="grid gap-x-1 gap-y-1.5"
-                  style={{ gridTemplateColumns: "repeat(7,minmax(0,1fr))" }}
-                >
+                <div className="ds-sidebar-calendar-grid">
                   {daysInMonth.map((day, idx) => {
                     if (!day) {
-                      return <div key={idx} className="min-h-[42px] opacity-0" />;
+                      return <div key={idx} className="ds-sidebar-calendar-day" style={{ opacity: 0 }} />;
                     }
-                    const key = localDateKey(day);
-                    const labels = Array.from(calendarLabels[key] ?? []);
-                    const badgeCodes = labels
-                      .map((label) => calendarIconByLabel[label])
-                      .filter(Boolean);
-                    const badgeText =
-                      badgeCodes.length === 0
-                        ? ""
-                        : badgeCodes.length === 1
-                          ? badgeCodes[0]
-                          : `${badgeCodes[0]}+${badgeCodes.length - 1}`;
                     const isToday = sameDate(day, today);
                     return (
-                      <div key={key} className="flex min-h-[42px] flex-col items-center">
-                        <button
-                          onClick={() => undefined}
-                          disabled={!isToday}
-                          className="relative h-[34px] w-[34px] rounded-full border text-[12px] font-bold"
-                          style={
-                            isToday
-                              ? {
-                                  borderColor: "#FAF5E8",
-                                  background: "linear-gradient(135deg, #FAF5E8, #F0E5D0)",
-                                  color: "#8C0F3A",
-                                }
-                              : {
-                                  borderColor: "rgba(250,245,232,.20)",
-                                  background: "rgba(140,15,58,.18)",
-                                  color: "#FAF5E8",
-                                  opacity: 0.78,
-                                }
-                          }
-                        >
-                          <span>{day.getDate()}</span>
-                          {badgeText && (
-                            <span className="ds-month-mini-badge" title={labels.join(" / ")}>
-                              {badgeText}
-                            </span>
-                          )}
+                      <div key={localDateKey(day)} className="ds-sidebar-calendar-day">
+                        <button className={isToday ? "is-today" : ""}>
+                          {day.getDate()}
                         </button>
                       </div>
                     );
                   })}
                 </div>
-
-                <div
-                  className="ds-month-footer mt-4 rounded-[14px] border px-3 py-2"
-                  style={{
-                    borderColor: "rgba(140,15,58,.36)",
-                    background: "rgba(140,15,58,.22)",
-                    color: "#FAF5E8",
-                  }}
-                >
-                  <p className="ds-micro">
-                    HOY {today.getDate()} -{" "}
-                    {todayCalendarLabels.length
-                      ? todayCalendarLabels
-                          .join(" / ")
-                      : "Sin actividades"}
-                  </p>
+                <div className="ds-sidebar-calendar-footer">
+                  HOY {today.getDate()} &ndash;{" "}
+                  {todayCalendarLabels.length
+                    ? todayCalendarLabels.join(" / ")
+                    : "Sin actividades"}
                 </div>
               </div>
-            </ExpandableSection>
-            </div>
 
-          {!completedToday && (
-          <div className="ds-section-block">
-            <h3 className="ds-h3">Entrenamiento completo de hoy</h3>
-            <p className="ds-description">
-              {todayPlan.length > 0
-                ? "¿Estás listo?"
-                : "Hoy no tenes rutina asignada."}
-            </p>
-            <PrimaryButton
-              onClick={startTodayWorkout}
-              disabled={todayPlan.length === 0}
-            >
-              ¡Empecemos!
-            </PrimaryButton>
+              <div className="ds-programa-card">
+                <h3 className="ds-programa-title">Programa</h3>
+                <div className="ds-programa-list">
+                  {programaItems.length > 0 ? (
+                    programaItems.map((item) => (
+                      <div key={item.id} className="ds-programa-item">
+                        <span className={`ds-programa-dot ${item.type === "live" ? "is-live" : item.type === "recorded" ? "is-recorded" : ""}`} />
+                        <div className="ds-programa-info">
+                          <p className="ds-programa-info-title">{item.title}</p>
+                          <p className="ds-programa-info-meta">{item.meta}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="ds-description" style={{ fontSize: "0.76rem" }}>Sin actividad reciente</p>
+                  )}
+                </div>
+              </div>
+            </aside>
           </div>
-          )}
-        </FloatingCard>
         )
       )}
 
@@ -1824,7 +1810,7 @@ export default function ClientePage() {
       )}
 
       {tab === "perfil" && (
-        <FloatingCard title="Perfil" className="ds-profile-shell">
+        <FloatingCard className="ds-profile-shell">
           <div className="ds-profile-stack">
             <article className="ds-profile-hero-card">
               <div className="ds-profile-hero">
@@ -1856,7 +1842,6 @@ export default function ClientePage() {
                   </div>
                 </div>
                 <h3 className="ds-profile-name">{name}</h3>
-                <p className="ds-profile-role">Cliente</p>
               </div>
               <div className="ds-profile-meta">
                 <div className="ds-profile-row">
@@ -1870,6 +1855,19 @@ export default function ClientePage() {
                   </p>
                 </div>
               </div>
+            </article>
+            <article className="ds-profile-notes-card">
+              <h3 className="ds-h3">Mi ficha</h3>
+              <div className="ds-profile-row">
+                <p className="ds-micro">Objetivos</p>
+                <p className="ds-description">{clientGoals || "Sin objetivos cargados por el entrenador."}</p>
+              </div>
+              <div className="ds-profile-row">
+                <p className="ds-micro">Dolencias / puntos a cuidar</p>
+                <p className="ds-description">{clientAttentionNotes || "Sin observaciones por el momento."}</p>
+              </div>
+            </article>
+            <article className="ds-profile-notes-card">
               <div className="ds-profile-menu">
                 <button
                   type="button"
@@ -1903,17 +1901,6 @@ export default function ClientePage() {
                 Cerrar sesión
               </PrimaryButton>
             </article>
-            <article className="ds-profile-notes-card">
-              <h3 className="ds-h3">Mi ficha</h3>
-              <div className="ds-profile-row">
-                <p className="ds-micro">Objetivos</p>
-                <p className="ds-description">{clientGoals || "Sin objetivos cargados por el entrenador."}</p>
-              </div>
-              <div className="ds-profile-row">
-                <p className="ds-micro">Dolencias / puntos a cuidar</p>
-                <p className="ds-description">{clientAttentionNotes || "Sin observaciones por el momento."}</p>
-              </div>
-            </article>
           </div>
           {profileMsg && <p className="ds-description ds-profile-msg">{profileMsg}</p>}
         </FloatingCard>
@@ -1928,9 +1915,8 @@ export default function ClientePage() {
         </div>
       </div>
 
-      {!(tab === "inicio" && showTodayWorkout) && (
-        <BottomNavigation items={tabs} value={tab} onChange={(value) => setTab(value as Tab)} />
-      )}
+      <SideNavigation items={tabs} value={tab} onChange={(value) => setTab(value as Tab)} />
+      <BottomNavigation items={tabs} value={tab} onChange={(value) => setTab(value as Tab)} />
       </AppShell>
     </ProtectedRoute>
   );

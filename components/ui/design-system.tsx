@@ -402,6 +402,50 @@ export function BottomNavigation({
   );
 }
 
+export function SideNavigation({
+  items,
+  value,
+  onChange,
+}: {
+  items: { id: string; label: string; icon?: ReactNode }[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const resolveIcon = (item: { id: string; label: string; icon?: ReactNode }) => {
+    if (item.icon) return item.icon;
+
+    switch (item.id) {
+      case "inicio":
+        return <StrokeIcon><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V20h13V9.5" /></StrokeIcon>;
+      case "biblioteca":
+        return <StrokeIcon><path d="M8 6.75v10.5" /><path d="M8 6.75c0-1 1.1-1.63 1.97-1.12l8.22 4.74a1.3 1.3 0 0 1 0 2.26l-8.22 4.74A1.3 1.3 0 0 1 8 16.25" /></StrokeIcon>;
+      case "progreso":
+        return <StrokeIcon><path d="M4 19h16" /><path d="M7 16V10" /><path d="M12 16V6" /><path d="M17 16v-4" /></StrokeIcon>;
+      case "perfil":
+        return <StrokeIcon><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></StrokeIcon>;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <nav className="ds-side-nav">
+      {items.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => onChange(item.id)}
+          className={`ds-side-nav-item ${value === item.id ? "is-active" : ""}`}
+          aria-label={item.label}
+          aria-current={value === item.id ? "page" : undefined}
+        >
+          <span className="ds-side-nav-icon" aria-hidden>{resolveIcon(item)}</span>
+          <span className="ds-side-nav-label">{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 export function StickyBottomCTA({
   label,
   href,
