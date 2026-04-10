@@ -375,10 +375,7 @@ export default function AdminPage() {
   const [newClient, setNewClient] = useState({ name: "", email: "" });
   const [newEx, setNewEx] = useState({ name: "", gifUrl: "", category: "fuerza" as Category, observations: "" });
   const [fuerzaPanel, setFuerzaPanel] = useState<
-    "createExercise" | "listExercises" | "assignRoutine" | "createTemplate" | "uploadRecorded" | "createLive" | "manageEncounters" | null
-  >(null);
-  const [yogaPanel, setYogaPanel] = useState<
-    "uploadRecorded" | "createLive" | "customVideo" | "manageClasses" | null
+    "createExercise" | "listExercises" | "assignRoutine" | "createTemplate" | "uploadRecorded" | "createLive" | null
   >(null);
   const [exerciseSearch, setExerciseSearch] = useState("");
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState<"todas" | Category>("todas");
@@ -435,6 +432,8 @@ export default function AdminPage() {
     Record<string, { title: string; date: string; url: string }>
   >({});
   const [showWelcomeManager, setShowWelcomeManager] = useState(false);
+  const [showYogaManager, setShowYogaManager] = useState(false);
+  const [showFuerzaManager, setShowFuerzaManager] = useState(false);
   const [editingWelcome, setEditingWelcome] = useState<
     Record<string, { title: string; url: string }>
   >({});
@@ -1555,9 +1554,6 @@ export default function AdminPage() {
                 <GhostButton onClick={() => setFuerzaPanel("createLive")}>
                   {adminTitleCopy.createLiveClass}
                 </GhostButton>
-                <GhostButton onClick={() => setFuerzaPanel("manageEncounters")}>
-                  {adminTitleCopy.manageClasses}
-                </GhostButton>
               </div>
             </FloatingCard>
           </div>
@@ -1814,14 +1810,13 @@ export default function AdminPage() {
           </div>
           )}
 
-          {fuerzaPanel === "manageEncounters" && (
-          <div className="ds-modal-overlay" role="presentation" onClick={() => setFuerzaPanel(null)}>
-            <div className="ds-simple-modal ds-simple-modal-wide ds-animate-card" role="dialog" aria-modal="true" aria-label={adminTitleCopy.manageClasses} onClick={(event) => event.stopPropagation()}>
-              <div className="ds-simple-modal-head">
-                <h3 className="ds-h3">{adminTitleCopy.manageClasses}</h3>
-                <button type="button" className="ds-routine-close" onClick={() => setFuerzaPanel(null)} aria-label={adminActionCopy.close}>×</button>
-              </div>
-              <div className="ds-simple-modal-body">
+          <FloatingCard title={adminTitleCopy.manageClasses}>
+            <GhostButton className="ds-encounters-toggle-btn" onClick={() => setShowFuerzaManager((current) => !current)}>
+              {showFuerzaManager ? adminActionCopy.hideManager : adminActionCopy.showManager}
+            </GhostButton>
+
+            <ExpandableSection open={showFuerzaManager}>
+              <>
                 <Tabs
                   items={[
                     { id: "recorded", label: "Clases grabadas" },
@@ -1860,67 +1855,14 @@ export default function AdminPage() {
                               const edit = editingRecorded[item.id];
                               return (
                                 <tr key={item.id} className={edit ? "is-editing" : undefined}>
-                                  <td>
-                                    {edit ? (
-                                      <input
-                                        className="ds-input"
-                                        value={edit.title}
-                                        onChange={(event) =>
-                                          setEditingRecorded((current) => ({
-                                            ...current,
-                                            [item.id]: { ...current[item.id], title: event.target.value },
-                                          }))
-                                        }
-                                      />
-                                    ) : item.title}
-                                  </td>
-                                  <td>
-                                    {edit ? (
-                                      <input
-                                        className="ds-input"
-                                        value={edit.url}
-                                        onChange={(event) =>
-                                          setEditingRecorded((current) => ({
-                                            ...current,
-                                            [item.id]: { ...current[item.id], url: event.target.value },
-                                          }))
-                                        }
-                                      />
-                                    ) : (
-                                      <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">
-                                        {item.youtube_url}
-                                      </a>
-                                    )}
-                                  </td>
+                                  <td>{edit ? <input className="ds-input" value={edit.title} onChange={(event) => setEditingRecorded((current) => ({ ...current, [item.id]: { ...current[item.id], title: event.target.value } }))} /> : item.title}</td>
+                                  <td>{edit ? <input className="ds-input" value={edit.url} onChange={(event) => setEditingRecorded((current) => ({ ...current, [item.id]: { ...current[item.id], url: event.target.value } }))} /> : <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">{item.youtube_url}</a>}</td>
                                   <td>{formatShortDate(item.created_at)}</td>
                                   <td>
                                     <div className={`ds-client-row-actions ${edit ? "is-editing" : ""}`}>
-                                      {edit ? (
-                                        <button
-                                          type="button"
-                                          className="ds-encounter-action-btn ds-encounter-save-btn"
-                                          onClick={async () => { await saveRecorded(item.id); setFuerzaPanel(null); }}
-                                          aria-label={adminActionCopy.saveChanges}
-                                        >
-                                          <span aria-hidden>✓</span>
-                                        </button>
-                                      ) : (
-                                        <GhostButton className="ds-encounter-action-btn" onClick={() => startEditRecorded(item)}>
-                                          {adminActionCopy.edit}
-                                        </GhostButton>
-                                      )}
-                                      <button
-                                        type="button"
-                                        className="ds-encounter-action-btn ds-encounter-delete-btn"
-                                        onClick={() => deleteRecorded(item.id)}
-                                        aria-label="Borrar clase grabada"
-                                      >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                          <path d="M3 6h18" />
-                                          <path d="M8 6V4h8v2" />
-                                          <path d="M19 6l-1 14H6L5 6" />
-                                          <path d="M10 11v6M14 11v6" />
-                                        </svg>
+                                      {edit ? <button type="button" className="ds-encounter-action-btn ds-encounter-save-btn" onClick={() => saveRecorded(item.id)} aria-label={adminActionCopy.saveChanges}><span aria-hidden>✓</span></button> : <GhostButton className="ds-encounter-action-btn" onClick={() => startEditRecorded(item)}>{adminActionCopy.edit}</GhostButton>}
+                                      <button type="button" className="ds-encounter-action-btn ds-encounter-delete-btn" onClick={() => deleteRecorded(item.id)} aria-label="Borrar clase grabada">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
                                       </button>
                                     </div>
                                   </td>
@@ -1958,67 +1900,14 @@ export default function AdminPage() {
                               const edit = editingLive[item.id];
                               return (
                                 <tr key={item.id} className={edit ? "is-editing" : undefined}>
-                                  <td>
-                                    {edit ? (
-                                      <input
-                                        className="ds-input"
-                                        value={edit.title}
-                                        onChange={(event) =>
-                                          setEditingLive((current) => ({
-                                            ...current,
-                                            [item.id]: { ...current[item.id], title: event.target.value },
-                                          }))
-                                        }
-                                      />
-                                    ) : item.title}
-                                  </td>
-                                  <td>
-                                    {edit ? (
-                                      <input
-                                        className="ds-input"
-                                        value={edit.url}
-                                        onChange={(event) =>
-                                          setEditingLive((current) => ({
-                                            ...current,
-                                            [item.id]: { ...current[item.id], url: event.target.value },
-                                          }))
-                                        }
-                                      />
-                                    ) : (
-                                      <a className="ds-link-inline" href={item.meet_url} target="_blank" rel="noreferrer">
-                                        {item.meet_url}
-                                      </a>
-                                    )}
-                                  </td>
+                                  <td>{edit ? <input className="ds-input" value={edit.title} onChange={(event) => setEditingLive((current) => ({ ...current, [item.id]: { ...current[item.id], title: event.target.value } }))} /> : item.title}</td>
+                                  <td>{edit ? <input className="ds-input" value={edit.url} onChange={(event) => setEditingLive((current) => ({ ...current, [item.id]: { ...current[item.id], url: event.target.value } }))} /> : <a className="ds-link-inline" href={item.meet_url} target="_blank" rel="noreferrer">{item.meet_url}</a>}</td>
                                   <td>{formatShortDate(item.created_at)}</td>
                                   <td>
                                     <div className={`ds-client-row-actions ${edit ? "is-editing" : ""}`}>
-                                      {edit ? (
-                                        <button
-                                          type="button"
-                                          className="ds-encounter-action-btn ds-encounter-save-btn"
-                                          onClick={async () => { await saveLive(item.id); setFuerzaPanel(null); }}
-                                          aria-label={adminActionCopy.saveChanges}
-                                        >
-                                          <span aria-hidden>✓</span>
-                                        </button>
-                                      ) : (
-                                        <GhostButton className="ds-encounter-action-btn" onClick={() => startEditLive(item)}>
-                                          {adminActionCopy.edit}
-                                        </GhostButton>
-                                      )}
-                                      <button
-                                        type="button"
-                                        className="ds-encounter-action-btn ds-encounter-delete-btn"
-                                        onClick={() => deleteLive(item.id)}
-                                        aria-label="Borrar clase en vivo"
-                                      >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                          <path d="M3 6h18" />
-                                          <path d="M8 6V4h8v2" />
-                                          <path d="M19 6l-1 14H6L5 6" />
-                                          <path d="M10 11v6M14 11v6" />
-                                        </svg>
+                                      {edit ? <button type="button" className="ds-encounter-action-btn ds-encounter-save-btn" onClick={() => saveLive(item.id)} aria-label={adminActionCopy.saveChanges}><span aria-hidden>✓</span></button> : <GhostButton className="ds-encounter-action-btn" onClick={() => startEditLive(item)}>{adminActionCopy.edit}</GhostButton>}
+                                      <button type="button" className="ds-encounter-action-btn ds-encounter-delete-btn" onClick={() => deleteLive(item.id)} aria-label="Borrar clase en vivo">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
                                       </button>
                                     </div>
                                   </td>
@@ -2031,221 +1920,159 @@ export default function AdminPage() {
                     )}
                   </>
                 )}
-              </div>
-            </div>
-          </div>
-          )}
+              </>
+            </ExpandableSection>
+          </FloatingCard>
         </>
       )}
 
       {tab === "yoga" && (
         <>
           <div className="ds-admin-fuerza-grid">
-            <FloatingCard title="Clase grabada" className="ds-admin-fuerza-card-compact">
-              <div className="ds-admin-group-actions">
-                <GhostButton onClick={() => setYogaPanel("uploadRecorded")}>
-                  Subir clase grabada
-                </GhostButton>
-              </div>
+            <FloatingCard title="Subir clase grabada" className="ds-admin-fuerza-card-compact">
+              <form onSubmit={async (event) => { await createRecorded(event, "yoga"); }} className="ds-admin-inline-form">
+                <TextField label="Título de la clase" value={recForm.title} onChange={(value) => setRecForm({ ...recForm, title: value })} placeholder="Ej. Yoga suave" />
+                <TextField label="Link de YouTube" value={recForm.url} onChange={(value) => setRecForm({ ...recForm, url: value })} placeholder="https://youtube.com/..." />
+                <PrimaryButton type="submit">{adminActionCopy.saveRecordedClass}</PrimaryButton>
+              </form>
             </FloatingCard>
 
             <FloatingCard title="Clase en vivo" className="ds-admin-fuerza-card-compact">
-              <div className="ds-admin-group-actions">
-                <GhostButton onClick={() => setYogaPanel("createLive")}>
-                  Programar clase en vivo
-                </GhostButton>
-              </div>
+              <form onSubmit={async (event) => { await createLive(event, "yoga"); }} className="ds-admin-inline-form">
+                <TextField label="Título" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} placeholder="Ej. Vinyasa en vivo" />
+                <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
+                <TextField label="Link de Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} placeholder="https://meet.google.com/..." />
+                <PrimaryButton type="submit">{adminActionCopy.saveLiveClass}</PrimaryButton>
+              </form>
             </FloatingCard>
 
             <FloatingCard title="Video personalizado" className="ds-admin-fuerza-card-compact">
-              <div className="ds-admin-group-actions">
-                <GhostButton onClick={() => setYogaPanel("customVideo")}>
-                  Asignar video a cliente
-                </GhostButton>
-              </div>
+              <form onSubmit={async (event) => { await createPersonalizedYoga(event); }} className="ds-admin-inline-form">
+                <TextField label="Título del video" value={yogaForm.title} onChange={(value) => setYogaForm({ ...yogaForm, title: value })} placeholder="Ej. Secuencia personalizada" />
+                <TextField label="Link de YouTube" value={yogaForm.url} onChange={(value) => setYogaForm({ ...yogaForm, url: value })} placeholder="https://youtube.com/..." />
+                <SelectField label="Cliente" value={yogaForm.clientId} onChange={(value) => setYogaForm({ ...yogaForm, clientId: value })}>
+                  <option value="">Elegir cliente</option>
+                  {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+                </SelectField>
+                <PrimaryButton type="submit">{adminActionCopy.saveVideo}</PrimaryButton>
+              </form>
             </FloatingCard>
 
-            <FloatingCard title="Gestionar clases" className="ds-admin-fuerza-card-compact">
-              <div className="ds-admin-group-actions">
-                <GhostButton onClick={() => setYogaPanel("manageClasses")}>
-                  Ver y editar clases
-                </GhostButton>
-              </div>
-            </FloatingCard>
           </div>
 
-          {yogaPanel === "uploadRecorded" && (
-            <div className="ds-modal-overlay" role="presentation" onClick={() => setYogaPanel(null)}>
-              <div className="ds-simple-modal ds-animate-card" role="dialog" aria-modal="true" aria-label="Subir clase grabada" onClick={(event) => event.stopPropagation()}>
-                <div className="ds-simple-modal-head">
-                  <h3 className="ds-h3">Subir clase grabada</h3>
-                  <button type="button" className="ds-routine-close" onClick={() => setYogaPanel(null)} aria-label="Cerrar">×</button>
-                </div>
-                <form onSubmit={async (event) => { await createRecorded(event, "yoga"); setYogaPanel(null); }} className="ds-simple-modal-body">
-                  <TextField label="Título de la clase" value={recForm.title} onChange={(value) => setRecForm({ ...recForm, title: value })} placeholder="Ej. Yoga suave para cerrar el día" />
-                  <TextField label="Link de YouTube" value={recForm.url} onChange={(value) => setRecForm({ ...recForm, url: value })} placeholder="https://youtube.com/..." />
-                  <PrimaryButton type="submit">{adminActionCopy.saveRecordedClass}</PrimaryButton>
-                </form>
-              </div>
-            </div>
-          )}
+          <FloatingCard title="Gestionar clases">
+            <GhostButton className="ds-encounters-toggle-btn" onClick={() => setShowYogaManager((current) => !current)}>
+              {showYogaManager ? adminActionCopy.hideManager : adminActionCopy.showManager}
+            </GhostButton>
 
-          {yogaPanel === "createLive" && (
-            <div className="ds-modal-overlay" role="presentation" onClick={() => setYogaPanel(null)}>
-              <div className="ds-simple-modal ds-animate-card" role="dialog" aria-modal="true" aria-label="Clase en vivo" onClick={(event) => event.stopPropagation()}>
-                <div className="ds-simple-modal-head">
-                  <h3 className="ds-h3">Programar clase en vivo</h3>
-                  <button type="button" className="ds-routine-close" onClick={() => setYogaPanel(null)} aria-label="Cerrar">×</button>
-                </div>
-                <form onSubmit={async (event) => { await createLive(event, "yoga"); setYogaPanel(null); }} className="ds-simple-modal-body">
-                  <TextField label="Título de la clase" value={liveForm.title} onChange={(value) => setLiveForm({ ...liveForm, title: value })} placeholder="Ej. Vinyasa en vivo" />
-                  <TextField label="Fecha y hora" value={liveForm.date} onChange={(value) => setLiveForm({ ...liveForm, date: value })} type="datetime-local" />
-                  <TextField label="Link de Meet" value={liveForm.url} onChange={(value) => setLiveForm({ ...liveForm, url: value })} placeholder="https://meet.google.com/..." />
-                  <label className="ds-field">
-                    <span className="ds-field-label">Foto de portada</span>
-                    <input className="ds-input" type="file" accept="image/*" onChange={(event) => void handleLiveCoverPick(event.target.files?.[0])} />
-                  </label>
-                  <PrimaryButton type="submit">{adminActionCopy.saveLiveClass}</PrimaryButton>
-                </form>
-              </div>
-            </div>
-          )}
+            <ExpandableSection open={showYogaManager}>
+            <>
+              <Tabs
+                items={[
+                  { id: "recorded", label: "Clases grabadas" },
+                  { id: "live", label: "Clases en vivo" },
+                ]}
+                value={encounterView.yoga}
+                onChange={(value) =>
+                  setEncounterView((current) => ({
+                    ...current,
+                    yoga: value as EncounterView,
+                  }))
+                }
+              />
 
-          {yogaPanel === "customVideo" && (
-            <div className="ds-modal-overlay" role="presentation" onClick={() => setYogaPanel(null)}>
-              <div className="ds-simple-modal ds-animate-card" role="dialog" aria-modal="true" aria-label="Video personalizado" onClick={(event) => event.stopPropagation()}>
-                <div className="ds-simple-modal-head">
-                  <h3 className="ds-h3">Asignar video personalizado</h3>
-                  <button type="button" className="ds-routine-close" onClick={() => setYogaPanel(null)} aria-label="Cerrar">×</button>
-                </div>
-                <form onSubmit={async (event) => { await createPersonalizedYoga(event); setYogaPanel(null); }} className="ds-simple-modal-body">
-                  <TextField label="Título del video" value={yogaForm.title} onChange={(value) => setYogaForm({ ...yogaForm, title: value })} placeholder="Ej. Secuencia personalizada de apertura" />
-                  <TextField label="Link de YouTube" value={yogaForm.url} onChange={(value) => setYogaForm({ ...yogaForm, url: value })} placeholder="https://youtube.com/..." />
-                  <SelectField label="Cliente" value={yogaForm.clientId} onChange={(value) => setYogaForm({ ...yogaForm, clientId: value })}>
-                    <option value="">Elegir cliente</option>
-                    {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
-                  </SelectField>
-                  <PrimaryButton type="submit">{adminActionCopy.saveVideo}</PrimaryButton>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {yogaPanel === "manageClasses" && (
-            <div className="ds-modal-overlay" role="presentation" onClick={() => setYogaPanel(null)}>
-              <div className="ds-simple-modal ds-simple-modal-wide ds-animate-card" role="dialog" aria-modal="true" aria-label="Gestionar clases" onClick={(event) => event.stopPropagation()}>
-                <div className="ds-simple-modal-head">
-                  <h3 className="ds-h3">Gestionar clases</h3>
-                  <button type="button" className="ds-routine-close" onClick={() => setYogaPanel(null)} aria-label="Cerrar">×</button>
-                </div>
-                <div className="ds-simple-modal-body">
-                  <Tabs
-                    items={[
-                      { id: "recorded", label: "Clases grabadas" },
-                      { id: "live", label: "Clases en vivo" },
-                    ]}
-                    value={encounterView.yoga}
-                    onChange={(value) =>
-                      setEncounterView((current) => ({
-                        ...current,
-                        yoga: value as EncounterView,
-                      }))
-                    }
-                  />
-
-                  {encounterView.yoga === "recorded" && (
-                    <>
-                      {yogaRecorded.length === 0 && (
-                        <div className="ds-admin-empty-state">
-                          <strong>{adminEmptyCopy.recorded.title}</strong>
-                          <p>{adminEmptyCopy.recorded.description}</p>
-                        </div>
-                      )}
-                      {yogaRecorded.length > 0 && (
-                        <div className="ds-clients-table-wrap ds-encounters-table-wrap">
-                          <table className="ds-clients-table ds-encounters-table">
-                            <thead>
-                              <tr>
-                                <th>{adminTableCopy.title}</th>
-                                <th>{adminTableCopy.access}</th>
-                                <th>{adminTableCopy.date}</th>
-                                <th className="ds-encounter-actions-col" aria-label="Acciones" />
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {yogaRecorded.map((item) => {
-                                const edit = editingRecorded[item.id];
-                                return (
-                                  <tr key={item.id} className={edit ? "is-editing" : undefined}>
-                                    <td>{edit ? <input className="ds-input" value={edit.title} onChange={(event) => setEditingRecorded((current) => ({ ...current, [item.id]: { ...current[item.id], title: event.target.value } }))} /> : item.title}</td>
-                                    <td>{edit ? <input className="ds-input" value={edit.url} onChange={(event) => setEditingRecorded((current) => ({ ...current, [item.id]: { ...current[item.id], url: event.target.value } }))} /> : <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">{item.youtube_url}</a>}</td>
-                                    <td>{formatShortDate(item.created_at)}</td>
-                                    <td>
-                                      <div className={`ds-client-row-actions ${edit ? "is-editing" : ""}`}>
-                                        {edit ? <button type="button" className="ds-encounter-action-btn ds-encounter-save-btn" onClick={() => saveRecorded(item.id)} aria-label={adminActionCopy.saveChanges}><span aria-hidden>✓</span></button> : <GhostButton className="ds-encounter-action-btn" onClick={() => startEditRecorded(item)}>{adminActionCopy.edit}</GhostButton>}
-                                        <button type="button" className="ds-encounter-action-btn ds-encounter-delete-btn" onClick={() => deleteRecorded(item.id)} aria-label="Borrar clase grabada">
-                                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </>
+              {encounterView.yoga === "recorded" && (
+                <>
+                  {yogaRecorded.length === 0 && (
+                    <div className="ds-admin-empty-state">
+                      <strong>{adminEmptyCopy.recorded.title}</strong>
+                      <p>{adminEmptyCopy.recorded.description}</p>
+                    </div>
                   )}
-
-                  {encounterView.yoga === "live" && (
-                    <>
-                      {yogaLive.length === 0 && (
-                        <div className="ds-admin-empty-state">
-                          <strong>{adminEmptyCopy.live.title}</strong>
-                          <p>{adminEmptyCopy.live.description}</p>
-                        </div>
-                      )}
-                      {yogaLive.length > 0 && (
-                        <div className="ds-clients-table-wrap ds-encounters-table-wrap">
-                          <table className="ds-clients-table ds-encounters-table">
-                            <thead>
-                              <tr>
-                                <th>{adminTableCopy.title}</th>
-                                <th>{adminTableCopy.access}</th>
-                                <th>{adminTableCopy.date}</th>
-                                <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                  {yogaRecorded.length > 0 && (
+                    <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                      <table className="ds-clients-table ds-encounters-table">
+                        <thead>
+                          <tr>
+                            <th>{adminTableCopy.title}</th>
+                            <th>{adminTableCopy.access}</th>
+                            <th>{adminTableCopy.date}</th>
+                            <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {yogaRecorded.map((item) => {
+                            const edit = editingRecorded[item.id];
+                            return (
+                              <tr key={item.id} className={edit ? "is-editing" : undefined}>
+                                <td>{edit ? <input className="ds-input" value={edit.title} onChange={(event) => setEditingRecorded((current) => ({ ...current, [item.id]: { ...current[item.id], title: event.target.value } }))} /> : item.title}</td>
+                                <td>{edit ? <input className="ds-input" value={edit.url} onChange={(event) => setEditingRecorded((current) => ({ ...current, [item.id]: { ...current[item.id], url: event.target.value } }))} /> : <a className="ds-link-inline" href={item.youtube_url} target="_blank" rel="noreferrer">{item.youtube_url}</a>}</td>
+                                <td>{formatShortDate(item.created_at)}</td>
+                                <td>
+                                  <div className={`ds-client-row-actions ${edit ? "is-editing" : ""}`}>
+                                    {edit ? <button type="button" className="ds-encounter-action-btn ds-encounter-save-btn" onClick={() => saveRecorded(item.id)} aria-label={adminActionCopy.saveChanges}><span aria-hidden>✓</span></button> : <GhostButton className="ds-encounter-action-btn" onClick={() => startEditRecorded(item)}>{adminActionCopy.edit}</GhostButton>}
+                                    <button type="button" className="ds-encounter-action-btn ds-encounter-delete-btn" onClick={() => deleteRecorded(item.id)} aria-label="Borrar clase grabada">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
+                                    </button>
+                                  </div>
+                                </td>
                               </tr>
-                            </thead>
-                            <tbody>
-                              {yogaLive.map((item) => {
-                                const edit = editingLive[item.id];
-                                return (
-                                  <tr key={item.id} className={edit ? "is-editing" : undefined}>
-                                    <td>{edit ? <input className="ds-input" value={edit.title} onChange={(event) => setEditingLive((current) => ({ ...current, [item.id]: { ...current[item.id], title: event.target.value } }))} /> : item.title}</td>
-                                    <td>{edit ? <input className="ds-input" value={edit.url} onChange={(event) => setEditingLive((current) => ({ ...current, [item.id]: { ...current[item.id], url: event.target.value } }))} /> : <a className="ds-link-inline" href={item.meet_url} target="_blank" rel="noreferrer">{item.meet_url}</a>}</td>
-                                    <td>{formatShortDate(item.created_at)}</td>
-                                    <td>
-                                      <div className={`ds-client-row-actions ${edit ? "is-editing" : ""}`}>
-                                        {edit ? <button type="button" className="ds-encounter-action-btn ds-encounter-save-btn" onClick={() => saveLive(item.id)} aria-label={adminActionCopy.saveChanges}><span aria-hidden>✓</span></button> : <GhostButton className="ds-encounter-action-btn" onClick={() => startEditLive(item)}>{adminActionCopy.edit}</GhostButton>}
-                                        <button type="button" className="ds-encounter-action-btn ds-encounter-delete-btn" onClick={() => deleteLive(item.id)} aria-label="Borrar clase en vivo">
-                                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
-                </div>
-              </div>
-            </div>
-          )}
+                </>
+              )}
+
+              {encounterView.yoga === "live" && (
+                <>
+                  {yogaLive.length === 0 && (
+                    <div className="ds-admin-empty-state">
+                      <strong>{adminEmptyCopy.live.title}</strong>
+                      <p>{adminEmptyCopy.live.description}</p>
+                    </div>
+                  )}
+                  {yogaLive.length > 0 && (
+                    <div className="ds-clients-table-wrap ds-encounters-table-wrap">
+                      <table className="ds-clients-table ds-encounters-table">
+                        <thead>
+                          <tr>
+                            <th>{adminTableCopy.title}</th>
+                            <th>{adminTableCopy.access}</th>
+                            <th>{adminTableCopy.date}</th>
+                            <th className="ds-encounter-actions-col" aria-label="Acciones" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {yogaLive.map((item) => {
+                            const edit = editingLive[item.id];
+                            return (
+                              <tr key={item.id} className={edit ? "is-editing" : undefined}>
+                                <td>{edit ? <input className="ds-input" value={edit.title} onChange={(event) => setEditingLive((current) => ({ ...current, [item.id]: { ...current[item.id], title: event.target.value } }))} /> : item.title}</td>
+                                <td>{edit ? <input className="ds-input" value={edit.url} onChange={(event) => setEditingLive((current) => ({ ...current, [item.id]: { ...current[item.id], url: event.target.value } }))} /> : <a className="ds-link-inline" href={item.meet_url} target="_blank" rel="noreferrer">{item.meet_url}</a>}</td>
+                                <td>{formatShortDate(item.created_at)}</td>
+                                <td>
+                                  <div className={`ds-client-row-actions ${edit ? "is-editing" : ""}`}>
+                                    {edit ? <button type="button" className="ds-encounter-action-btn ds-encounter-save-btn" onClick={() => saveLive(item.id)} aria-label={adminActionCopy.saveChanges}><span aria-hidden>✓</span></button> : <GhostButton className="ds-encounter-action-btn" onClick={() => startEditLive(item)}>{adminActionCopy.edit}</GhostButton>}
+                                    <button type="button" className="ds-encounter-action-btn ds-encounter-delete-btn" onClick={() => deleteLive(item.id)} aria-label="Borrar clase en vivo">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          </ExpandableSection>
+          </FloatingCard>
         </>
       )}
 

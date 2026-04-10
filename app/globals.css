@@ -4417,6 +4417,32 @@ button.ds-carousel-arrow:active {
   min-height: 236px;
 }
 
+.ds-admin-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ds-admin-inline-form .ds-field {
+  margin: 0;
+}
+
+.ds-admin-inline-form .ds-btn-primary {
+  margin-top: 4px;
+  align-self: flex-start;
+}
+
+.ds-admin-inline-form .ds-clients-table-wrap {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ds-admin-inline-form .ds-encounters-table th,
+.ds-admin-inline-form .ds-encounters-table td {
+  padding: 6px 8px;
+  font-size: 0.82rem;
+}
+
 .ds-admin-group-actions-classes {
   display: flex;
   flex-direction: column;
