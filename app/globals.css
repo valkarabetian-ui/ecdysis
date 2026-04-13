@@ -740,9 +740,10 @@ body {
 
 .ds-hero-logo {
   height: auto;
-  width: clamp(220px, 50vw, 320px);
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
-  margin: 0 auto;
+  margin: 0 0 0 auto;
   display: block;
 }
 
@@ -3529,7 +3530,6 @@ body {
 .ds-profile-shell {
   width: 100%;
   padding: 0 !important;
-  overflow: hidden;
 }
 
 .ds-profile-shell > .ds-stack-md {
@@ -3548,21 +3548,12 @@ body {
   padding: 0;
 }
 
-.ds-profile-hero-card::before {
-  content: "";
-  display: block;
-  height: 90px;
-  background: linear-gradient(160deg, rgba(61, 5, 26, 0.97), rgba(140, 15, 58, 0.88), rgba(92, 8, 38, 0.94));
-  flex-shrink: 0;
-}
-
 .ds-profile-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 0 var(--ds-space-2) var(--ds-space-2);
-  margin-top: -52px;
+  padding: var(--ds-space-3) var(--ds-space-2) var(--ds-space-2);
 }
 
 .ds-profile-avatar-wrap {
@@ -3576,7 +3567,7 @@ body {
   bottom: 2px;
   width: 28px;
   height: 28px;
-  border: 2px solid #FAF5E8;
+  border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 999px;
   background: linear-gradient(160deg, var(--ds-button-hover), var(--ds-button-strong));
   color: #FAF5E8;
@@ -3594,8 +3585,8 @@ body {
   width: 104px;
   height: 104px;
   border-radius: 999px;
-  border: 3.5px solid #FAF5E8;
-  background: linear-gradient(145deg, rgba(140, 15, 58, 0.18), rgba(61, 5, 26, 0.28));
+  border: 3.5px solid rgba(140, 15, 58, 0.15);
+  background: linear-gradient(145deg, rgba(140, 15, 58, 0.10), rgba(61, 5, 26, 0.18));
   color: rgba(250, 245, 232, 0.7);
   display: inline-flex;
   align-items: center;
@@ -3603,7 +3594,7 @@ body {
   font-size: 2.4rem;
   font-weight: 500;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(61, 5, 26, 0.22);
+  box-shadow: 0 6px 20px rgba(61, 5, 26, 0.12);
 }
 
 .ds-profile-avatar-placeholder {
