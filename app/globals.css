@@ -6633,15 +6633,13 @@ button.ds-carousel-arrow:active {
 
   .ds-admin-page-shell {
     padding: calc(var(--ds-space-2) + var(--ds-safe-top) + 20px) var(--ds-space-1)
-      var(--ds-space-4);
-    padding-left: 112px;
+      calc(var(--ds-space-6) + 96px);
     gap: var(--ds-space-3);
   }
 
   .ds-client-page-shell {
     padding: calc(var(--ds-space-2) + var(--ds-safe-top) + 20px) var(--ds-space-1)
-      var(--ds-space-4);
-    padding-left: 80px;
+      calc(var(--ds-space-6) + 96px);
     gap: var(--ds-space-3);
   }
 
@@ -6854,15 +6852,6 @@ button.ds-carousel-arrow:active {
 
 /* ── Dashboard responsive ── */
 @media (max-width: 899px) {
-  .ds-side-nav {
-    display: flex;
-  }
-
-  .ds-client-page-shell {
-    padding-left: 80px !important;
-    padding-bottom: var(--ds-space-4) !important;
-  }
-
   .ds-dashboard-grid {
     grid-template-columns: 1fr;
   }
@@ -6882,6 +6871,14 @@ button.ds-carousel-arrow:active {
   }
 }
 
-.ds-bottom-nav {
-  display: none !important;
+@media (min-width: 900px) {
+  .ds-bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 899px) {
+  .ds-side-nav {
+    display: none !important;
+  }
 }
