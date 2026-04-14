@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 function PasswordVisibilityIcon({ isVisible }: { isVisible: boolean }) {
@@ -261,10 +262,7 @@ export default function LoginPage() {
             {isPasswordResetFlow ? (
               "Nueva contraseña"
             ) : (
-              <>
-                <span className="ds-login-title-soft">Práctica</span>
-                <span className="ds-login-title-strong">Viva</span>
-              </>
+              <Image src="/logo-pv.png" alt="Práctica Viva" width={220} height={28} priority className="ds-login-logo" />
             )}
           </h1>
           <p className="ds-login-subtitle">

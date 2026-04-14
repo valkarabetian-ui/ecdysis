@@ -1168,7 +1168,7 @@ export default function ClientePage() {
 
   return (
     <ProtectedRoute allowedRole="cliente">
-      <AppShell kicker="" title="" logoSrc={showTodayWorkout && tab === "inicio" ? undefined : "/logo-pv.png"}>
+      <AppShell kicker="" title="" logoSrc="https://cdn.builder.io/api/v1/image/assets%2Fe2abf875b823418a8ca609448d000071%2F1074f25a4fbf4592b8ef1c4f7b9bf2ad?format=webp&width=800&height=1200">
       {(refreshing || pullDistance > 0) && (
         <div
           className={`ds-pull-indicator ${refreshing ? "is-refreshing" : ""}`}

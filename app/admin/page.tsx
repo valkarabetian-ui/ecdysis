@@ -2192,12 +2192,12 @@ export default function AdminPage() {
         </>
       )}
 
-          <SideNavigation
-            items={tabs.map((item) => ({ id: item.id, label: item.label, icon: item.icon }))}
-            value={tab}
-            onChange={(value) => setTab(value as Tab)}
-          />
-        </main>
+        <SideNavigation
+          items={tabs.map((item) => ({ id: item.id, label: item.label, icon: item.icon }))}
+          value={tab}
+          onChange={(value) => setTab(value as Tab)}
+        />
+      </main>
         </div>
       </div>
     </ProtectedRoute>
