@@ -11,12 +11,14 @@
   --ds-lh-tight: 1.08;
   --ds-lh-heading: 1.15;
   --ds-lh-body: 1.6;
-  /* Paleta: vino #8C0F3A · oliva #B7C36A */
+  /* Paleta: vino #8C0F3A · verde #e5ff72 */
   --pv-wine: #8C0F3A;
   --pv-wine-dark: #5C0826;
   --pv-wine-deeper: #3D051A;
-  --pv-olive: #B7C36A;
-  --pv-olive-dark: #8A9450;
+  --pv-olive: #e5ff72;
+  --pv-olive-dark: #b8cc5a;
+  --pv-orange: #E05A1A;
+  --pv-orange-soft: rgba(224, 90, 26, 0.12);
   --pv-cream: #FAF5E8;
   --pv-cream-deep: #F0E5D0;
   --ds-button: #8C0F3A;
@@ -1987,8 +1989,8 @@ body {
 }
 
 .ds-admin-feedback-success {
-  background: rgba(183, 195, 106, 0.12);
-  border-color: rgba(183, 195, 106, 0.2);
+  background: rgba(229, 255, 114, 0.12);
+  border-color: rgba(229, 255, 114, 0.2);
   color: rgba(246, 251, 243, 0.96);
 }
 
@@ -3520,7 +3522,7 @@ body {
   width: 100%;
   max-width: 26px;
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(183, 195, 106, 0.95), rgba(155, 170, 80, 0.62));
+  background: linear-gradient(180deg, rgba(229, 255, 114, 0.95), rgba(155, 170, 80, 0.62));
   min-height: 14px;
   position: relative;
   overflow: hidden;
@@ -5139,7 +5141,7 @@ button.ds-carousel-arrow:active {
   height: 300px;
   right: max(0%, calc(50% - 520px));
   bottom: 10%;
-  background: radial-gradient(circle, rgba(183, 195, 106, 0.14) 0%, rgba(183, 195, 106, 0) 72%);
+  background: radial-gradient(circle, rgba(229, 255, 114, 0.14) 0%, rgba(229, 255, 114, 0) 72%);
   animation: ds-login-ambient-float-right 14s ease-in-out infinite alternate;
 }
 
@@ -5536,14 +5538,14 @@ button.ds-carousel-arrow:active {
 }
 
 .ds-login-checklist span.is-ready {
-  border-color: rgba(183, 195, 106, 0.30);
-  background: rgba(183, 195, 106, 0.12);
+  border-color: rgba(229, 255, 114, 0.30);
+  background: rgba(229, 255, 114, 0.12);
   color: rgba(240, 245, 210, 0.94);
 }
 
 .ds-login-checklist span.is-ready::before {
   background: #B7C36A;
-  box-shadow: 0 0 0 4px rgba(183, 195, 106, 0.14);
+  box-shadow: 0 0 0 4px rgba(229, 255, 114, 0.14);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -5603,8 +5605,8 @@ button.ds-carousel-arrow:active {
 }
 
 .ds-login-feedback-success {
-  border-color: rgba(183, 195, 106, 0.28);
-  background: rgba(183, 195, 106, 0.10);
+  border-color: rgba(229, 255, 114, 0.28);
+  background: rgba(229, 255, 114, 0.10);
   color: rgba(240, 245, 210, 0.94);
 }
 
@@ -6872,4 +6874,24 @@ button.ds-carousel-arrow:active {
   .ds-side-nav {
     display: none !important;
   }
+}
+
+/* ============================================
+   LANDING PAGE — Práctica Viva (editorial)
+   ============================================ */
+
+.lp {
+  background: var(--pv-cream) !important;
+  background-image: none !important;
+  color: #3D051A;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: var(--font-open-sans), sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+body:has(.lp) {
+  background-image: none !important;
+  background-color: var(--pv-cream) !important;
 }
