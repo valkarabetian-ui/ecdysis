@@ -110,8 +110,7 @@
     position: fixed;
     top: 0; right: 0; bottom: 0;
     width: 280px;
-    background: rgba(250, 245, 232, 0.98);
-    backdrop-filter: blur(20px);
+    background: #FAF5E8;
     flex-direction: column;
     align-items: flex-start;
     padding: 80px 32px 32px;
@@ -254,7 +253,7 @@
 }
 
 @media (max-width: 480px) {
-  .lp-hero { padding: 110px 0 0; }
+  .lp-hero { padding: 110px 0 32px; }
   .lp-hero-h1 { font-size: 2.2rem; }
   .lp-btn { width: 100%; }
 }
@@ -425,8 +424,8 @@
     padding: 0 24px;
     gap: 32px;
   }
-  .lp-equipo-photo { max-width: 100%; }
-  .lp-equipo-info { max-width: 100%; text-align: center; }
+  .lp-equipo-info { order: 1; max-width: 100%; text-align: center; }
+  .lp-equipo-photo { order: 2; max-width: 100%; }
   .lp-equipo-line { margin: 0 auto; }
 }
 
