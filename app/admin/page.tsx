@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { supabase } from "@/lib/supabase";
 import {
@@ -442,6 +442,7 @@ export default function AdminPage() {
     Record<string, { goals: string; attentionNotes: string }>
   >({});
   const toastTimeoutRef = useRef<number | null>(null);
+  const bulkUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const showSuccessToast = (message: string) => {
     setToastMessage(message);
@@ -704,6 +705,143 @@ export default function AdminPage() {
     setNewEx({ name: "", gifUrl: "", category: "fuerza", observations: "" });
     await loadAll();
     showSuccessToast("Ejercicio creado exitosamente.");
+    setSaving(false);
+  };
+
+  const downloadExerciseTemplate = () => {
+    const headers = ["Nombre del ejercicio", "Categoria", "Link de YouTube", "Observaciones"];
+    const example = [
+      "Sentadilla goblet",
+      "fuerza",
+      "https://www.youtube.com/watch?v=ejemplo",
+      "Mantené la espalda derecha",
+    ];
+    const escape = (value: string) => {
+      if (/[";\r\n]/.test(value)) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+    const csv =
+      "\uFEFF" +
+      [headers.map(escape).join(";"), example.map(escape).join(";")].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "planilla-ejercicios.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const parseCsvLine = (line: string, sep: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          current += ch;
+        }
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === sep) {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result.map((value) => value.trim());
+  };
+
+  const handleBulkExerciseUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    const resetInput = () => {
+      if (bulkUploadInputRef.current) bulkUploadInputRef.current.value = "";
+    };
+    if (!file) return;
+
+    const text = await file.text();
+    const cleaned = text.replace(/^\uFEFF/, "");
+    const lines = cleaned.split(/\r?\n/).filter((line) => line.trim() !== "");
+    if (lines.length < 2) {
+      setError("La planilla esta vacia o solo tiene el encabezado.");
+      resetInput();
+      return;
+    }
+
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const dataLines = lines.slice(1);
+
+    const rows: { name: string; category: Category; gif_url: string; observations: string | null }[] = [];
+    const errors: string[] = [];
+
+    dataLines.forEach((line, index) => {
+      const rowNumber = index + 2;
+      const cols = parseCsvLine(line, sep);
+      const name = (cols[0] ?? "").trim();
+      const categoryRaw = (cols[1] ?? "").trim();
+      const categoryNorm = categoryRaw.toLowerCase();
+      const gifUrl = (cols[2] ?? "").trim();
+      const observations = (cols[3] ?? "").trim();
+
+      if (!name && !categoryRaw && !gifUrl && !observations) return;
+
+      if (!name) {
+        errors.push(`Fila ${rowNumber}: falta el nombre.`);
+        return;
+      }
+      if (categoryNorm !== "fuerza" && categoryNorm !== "movilidad") {
+        errors.push(`Fila ${rowNumber}: categoria invalida ("${categoryRaw}"). Usa "fuerza" o "movilidad".`);
+        return;
+      }
+      if (!gifUrl) {
+        errors.push(`Fila ${rowNumber}: falta el link de YouTube.`);
+        return;
+      }
+      if (!isYouTubeUrl(gifUrl)) {
+        errors.push(`Fila ${rowNumber}: el link no es una URL valida de YouTube.`);
+        return;
+      }
+      rows.push({
+        name,
+        category: categoryNorm as Category,
+        gif_url: gifUrl,
+        observations: observations || null,
+      });
+    });
+
+    if (rows.length === 0) {
+      setError(`No se cargaron ejercicios. ${errors.slice(0, 3).join(" ")}`);
+      resetInput();
+      return;
+    }
+
+    setSaving(true);
+    const { error: insertError } = await supabase.from("exercises").insert(rows);
+    if (insertError) {
+      setError(insertError.message);
+      setSaving(false);
+      resetInput();
+      return;
+    }
+    await loadAll();
+    if (errors.length > 0) {
+      setError(`Se cargaron ${rows.length} ejercicio(s). Filas omitidas (${errors.length}): ${errors.slice(0, 3).join(" ")}`);
+    }
+    showSuccessToast(`Se cargaron ${rows.length} ejercicio(s) exitosamente.`);
+    resetInput();
+    setFuerzaPanel(null);
     setSaving(false);
   };
 
@@ -1590,6 +1728,29 @@ export default function AdminPage() {
                 </label>
                 <PrimaryButton type="submit">Guardar ejercicio</PrimaryButton>
               </form>
+              <div className="ds-bulk-upload">
+                <div className="ds-bulk-upload-divider">
+                  <span>Carga masiva</span>
+                </div>
+                <p className="ds-bulk-upload-hint">
+                  Descargá la planilla, completá las columnas y subila para crear varios ejercicios de una sola vez.
+                </p>
+                <div className="ds-bulk-upload-actions">
+                  <GhostButton type="button" onClick={downloadExerciseTemplate}>
+                    Descargar planilla
+                  </GhostButton>
+                  <GhostButton type="button" onClick={() => bulkUploadInputRef.current?.click()}>
+                    Cargar planilla
+                  </GhostButton>
+                  <input
+                    ref={bulkUploadInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    style={{ display: "none" }}
+                    onChange={handleBulkExerciseUpload}
+                  />
+                </div>
+              </div>
             </div>
           </div>
           )}
