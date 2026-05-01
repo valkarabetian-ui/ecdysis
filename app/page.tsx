@@ -33,7 +33,7 @@ export default function LandingPage() {
             <a href="#nosotras" onClick={() => setMenuOpen(false)}>EQUIPO</a>
             <div className="lp-nav-divider" />
             <Link href="/login" className="lp-nav-cta" onClick={() => setMenuOpen(false)}>
-              Iniciar Sesión
+              Iniciar sesión
             </Link>
           </div>
         </div>
@@ -51,7 +51,7 @@ export default function LandingPage() {
               Fuerza. Movilidad. Yoga. Meditación.
             </p>
             <a href="#videollamada" className="lp-btn lp-btn--dark">
-              Agendar Videollamada
+              Agendar videollamada
             </a>
           </div>
           <div className="lp-hero-visual">
@@ -102,17 +102,17 @@ export default function LandingPage() {
             </div>
             <div className="lp-proceso-card">
               <div className="lp-proceso-num">02</div>
-              <h3>Evaluación Inicial</h3>
+              <h3>Evaluación inicial</h3>
               <p>Analizamos tu punto de partida, objetivos y limitaciones.</p>
             </div>
             <div className="lp-proceso-card">
               <div className="lp-proceso-num">03</div>
-              <h3>Plan Personalizado</h3>
+              <h3>Plan personalizado</h3>
               <p>Recibís tu ruta de entrenamiento y hábitos adaptada a vos.</p>
             </div>
             <div className="lp-proceso-card">
               <div className="lp-proceso-num">04</div>
-              <h3>Transformación Continua</h3>
+              <h3>Transformación continua</h3>
               <p>Ajustes mensuales, llamadas de seguimiento y soporte.</p>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function LandingPage() {
               rel="noopener noreferrer"
               className="lp-btn lp-btn--dark"
             >
-              Agendar Videollamada
+              Agendar videollamada
             </a>
           </div>
         </div>
@@ -210,8 +210,8 @@ export default function LandingPage() {
               <li>Clases de yoga y meditación</li>
               <li>App con calendario y seguimiento</li>
               <li>Contacto directo con tus entrenadoras</li>
-              <li>Comunidad de alumnas</li>
-              <li>Videollamada de bienvenida</li>
+              <li>Comunidad </li>
+              
             </ul>
 
             <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="lp-btn lp-btn--dark lp-btn--full">
