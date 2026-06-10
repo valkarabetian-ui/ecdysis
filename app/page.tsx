@@ -122,7 +122,7 @@ export default function LandingPage() {
       {/* ── NOSOTRAS ── */}
       <section id="nosotras" className="lp-equipo">
         {/* Candela - foto derecha */}
-        <div className="lp-equipo-row lp-equipo-row--reverse">
+        <div className="lp-equipo-row">
           <div className="lp-equipo-info">
             <span className="lp-equipo-tag lp-equipo-tag--verde">YOGA Y MEDITACIÓN</span>
             <h3 className="lp-equipo-name">Candela Pellegrino</h3>
