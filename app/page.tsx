@@ -124,7 +124,7 @@ export default function LandingPage() {
         {/* Candela - foto derecha */}
         <div className="lp-equipo-row lp-equipo-row--reverse">
           <div className="lp-equipo-info">
-            <span className="lp-equipo-tag">YOGA Y MEDITACIÓN</span>
+            <span className="lp-equipo-tag lp-equipo-tag--verde">YOGA Y MEDITACIÓN</span>
             <h3 className="lp-equipo-name">Candela Pellegrino</h3>
             <p>
               Guía experta en la conexión mente-cuerpo. Candela te
@@ -157,7 +157,7 @@ export default function LandingPage() {
             />
           </div>
           <div className="lp-equipo-info">
-            <span className="lp-equipo-tag lp-equipo-tag--orange">FUERZA Y MOVILIDAD</span>
+            <span className="lp-equipo-tag">FUERZA Y MOVILIDAD</span>
             <h3 className="lp-equipo-name">Valentina Oyuela</h3>
             <p>
               Especialista en potenciar las capacidades humanas.
@@ -165,7 +165,7 @@ export default function LandingPage() {
               libertad de la movilidad para que construyas un cuerpo
               capaz de todo.
             </p>
-            <div className="lp-equipo-line lp-equipo-line--orange" />
+            <div className="lp-equipo-line" />
           </div>
         </div>
       </section>

@@ -22,6 +22,10 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <meta charSet="UTF-8" />
+        {/* General Sans servido localmente desde /public/fonts (ver @font-face en globals.css) */}
+        <link rel="preload" href="/fonts/GeneralSans-Regular.otf" as="font" type="font/otf" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/GeneralSans-Medium.otf" as="font" type="font/otf" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/GeneralSans-Semibold.otf" as="font" type="font/otf" crossOrigin="anonymous" />
       </head>
       <body className="antialiased">
         {children}

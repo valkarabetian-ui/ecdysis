@@ -14,7 +14,7 @@
 }
 
 .lp-nav--scrolled {
-  background: rgba(250, 245, 232, 0.92);
+  background: rgba(237, 217, 176, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 1px 0 rgba(140, 15, 58, 0.08);
@@ -110,7 +110,7 @@
     position: fixed;
     top: 0; right: 0; bottom: 0;
     width: 280px;
-    background: #FAF5E8;
+    background: var(--crema);
     flex-direction: column;
     align-items: flex-start;
     padding: 80px 32px 32px;
@@ -194,9 +194,9 @@
 }
 
 .lp-hero-accent {
-  color: #E05A1A;
+  color: var(--naranja);
   font-style: italic;
-  border-bottom: 2px solid #E05A1A;
+  border-bottom: 2px solid var(--naranja);
   padding-bottom: 4px;
 }
 
@@ -223,7 +223,7 @@
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: rgba(229, 255, 114, 0.3);
+  background: rgba(200, 210, 127, 0.3);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -45%);
@@ -293,7 +293,7 @@
 .lp-metodo-divider {
   width: 1px;
   min-height: 120px;
-  background: rgba(250, 245, 232, 0.15);
+  background: rgba(237, 217, 176, 0.15);
   align-self: stretch;
 }
 
@@ -305,7 +305,7 @@
 .lp-metodo-right p {
   font-size: 18px;
   line-height: 1.65;
-  color: rgba(250, 245, 232, 0.75);
+  color: rgba(237, 217, 176, 0.75);
   margin: 0 0 32px;
 }
 
@@ -315,7 +315,7 @@
   font-size: 13px;
   letter-spacing: 0.1em;
   font-weight: 500;
-  border-bottom: 1px solid rgba(229, 255, 114, 0.4);
+  border-bottom: 1px solid rgba(200, 210, 127, 0.4);
   padding-bottom: 4px;
   transition: border-color 0.2s, color 0.2s;
 }
@@ -339,7 +339,7 @@
   padding: 100px 0;
   background:
     url('/fondo-pw-2.png') repeat top left,
-    linear-gradient(180deg, rgba(229, 255, 114, 0.08) 0%, var(--pv-cream) 100%);
+    linear-gradient(180deg, rgba(200, 210, 127, 0.08) 0%, var(--pv-cream) 100%);
 }
 
 .lp-equipo-row {
@@ -387,7 +387,14 @@
 
 .lp-equipo-tag--orange {
   border-color: rgba(224, 90, 26, 0.35);
-  color: #E05A1A;
+  color: var(--naranja);
+}
+
+/* Variante verde (yoga) per manual */
+.lp-equipo-tag--verde {
+  border-color: rgba(200, 210, 127, 0.6);
+  color: var(--tinta-calida);
+  background: rgba(200, 210, 127, 0.18);
 }
 
 .lp-equipo-name {
@@ -414,7 +421,7 @@
 }
 
 .lp-equipo-line--orange {
-  background: linear-gradient(90deg, #E05A1A, var(--pv-olive));
+  background: var(--naranja);
 }
 
 @media (max-width: 768px) {
@@ -436,8 +443,8 @@
 }
 
 .lp-call-card {
-  background: rgba(229, 255, 114, 0.15);
-  border: 1px solid rgba(229, 255, 114, 0.3);
+  background: rgba(200, 210, 127, 0.15);
+  border: 1px solid rgba(200, 210, 127, 0.3);
   border-radius: 28px;
   padding: 80px 60px;
   text-align: center;
@@ -448,7 +455,7 @@
 .lp-call-tag {
   font-size: 12px;
   letter-spacing: 0.1em;
-  color: #E05A1A;
+  color: var(--naranja);
   margin-bottom: 16px;
   display: block;
 }
@@ -497,7 +504,7 @@
 .lp-precio-tag {
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: #E05A1A;
+  color: var(--naranja);
   margin-bottom: 20px;
   display: block;
 }
@@ -582,7 +589,7 @@
 }
 
 .lp-footer-copy {
-  color: rgba(250, 245, 232, 0.35);
+  color: rgba(237, 217, 176, 0.35);
   font-size: 13px;
   margin: 0;
 }
@@ -605,7 +612,7 @@
 .lp-proceso-tag {
   font-size: 12px;
   letter-spacing: 0.1em;
-  color: #E05A1A;
+  color: var(--naranja);
   display: block;
   margin-bottom: 14px;
 }
@@ -643,8 +650,8 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: rgba(229, 255, 114, 0.2);
-  border: 2px solid rgba(229, 255, 114, 0.5);
+  background: rgba(200, 210, 127, 0.2);
+  border: 2px solid rgba(200, 210, 127, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;

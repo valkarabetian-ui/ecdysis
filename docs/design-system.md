@@ -11,11 +11,11 @@
 - `--ds-border`: subtle borders
 
 ## 2. Typography Hierarchy
-- `ds-h1`: editorial hero title (Cormorant Garamond)
-- `ds-h2`: section headline (Cormorant Garamond)
-- `ds-h3`: card title (Manrope)
-- `ds-subtitle` and `ds-description`: supporting copy (Manrope)
-- `ds-micro` and `ds-field-label`: helper/meta text (Manrope)
+Todo usa **General Sans** (servida localmente desde `/public/fonts/`).
+Pesos disponibles: 200, 300, 400, 500, 600, 700 (cada uno con itálica).
+- `ds-h1`, `ds-h2`, `ds-h3`: títulos editoriales (General Sans, weight 500)
+- `ds-subtitle` y `ds-description`: copy de soporte (General Sans, weight 500)
+- `ds-micro` y `ds-field-label`: helper/meta (General Sans, weight 600 uppercase)
 
 ## 3. Spacing Scale (8pt Grid)
 - `--ds-space-1`: 8px
